@@ -18,7 +18,7 @@ def get_base64_of_bin_file(bin_file_path):
         data = f.read()
     return base64.b64encode(data).decode()
 
-logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
+logo_base64 = get_base64_of_bin_file("open-atlas-logo.png")
 
 # ---------- Page config ----------
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
