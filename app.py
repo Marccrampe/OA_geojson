@@ -55,19 +55,8 @@ with tabs[0]:
         st.session_state.zoom = 2
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
-    if "clear_map_trigger" not in st.session_state:
-        st.session_state.clear_map_trigger = 0
-    if "geoloc_click" not in st.session_state:
-        st.session_state.geoloc_click = 0
 
     st.subheader("🗺️ Draw your area")
-
-    if clear_map:
-        st.session_state.drawings = []
-        st.session_state.clear_map_trigger += 1
-
-    if geoloc_trigger:
-        st.session_state.geoloc_click += 1
 
     m = folium.Map(
         location=st.session_state.map_center,
@@ -125,6 +114,9 @@ with tabs[0]:
                 {% endmacro %}
             """)
         m.add_child(ClearDrawJS())
+
+        # Also clear session drawings manually
+        st.session_state.drawings = []
 
     # Inject JS to simulate click on LocateControl
     if geoloc_trigger:
