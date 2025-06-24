@@ -134,10 +134,12 @@ with tabs[0]:
     if locate_me:
         st.session_state.map_center = "locate"
 
-    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
+    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing"])
 
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
+        # Force refresh by re-rendering the map without previous drawings
+        st.experimental_rerun()
 
     st.subheader("✅ Geometry Validation")
 
