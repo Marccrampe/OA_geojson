@@ -91,7 +91,7 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.7
+    opacity=0.4
 ).add_to(m)
 
 Draw(
