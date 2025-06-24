@@ -87,60 +87,46 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl(auto_start=False).add_to(m)
 
-    # Custom locate button
-    locate_js = Template("""
-        {% macro script(this, kwargs) %}
-        var locateBtn = L.control({position: 'topleft'});
-        locateBtn.onAdd = function(map) {
-            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            div.innerHTML = '<button title="Center map on your location">📍 Center</button>';
-            div.style.backgroundColor = 'white';
-            div.style.padding = '5px';
-            div.style.cursor = 'pointer';
-            div.onclick = function(){
-                map.eachLayer(function(layer){
-                    if(layer._event === 'locationfound'){ return; }
-                    if(layer._locateOptions){
-                        layer.start();
-                    }
-                });
-            };
-            return div;
-        }
-        locateBtn.addTo({{this._parent.get_name()}});
-        {% endmacro %}
-    """)
-
-    # Custom clear button
-    clear_js = Template("""
-        {% macro script(this, kwargs) %}
-        var clearBtn = L.control({position: 'topleft'});
-        clearBtn.onAdd = function(map) {
-            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            div.innerHTML = '<button title="Clear all drawings">🗑️ Clear</button>';
-            div.style.backgroundColor = 'white';
-            div.style.padding = '5px';
-            div.style.cursor = 'pointer';
-            div.onclick = function(){
-                map.eachLayer(function(layer){
-                    if(layer instanceof L.FeatureGroup){
-                        layer.clearLayers();
-                    }
-                });
-            };
-            return div;
-        }
-        clearBtn.addTo({{this._parent.get_name()}});
-        {% endmacro %}
-    """)
-
-    class CustomJSControl(MacroElement):
-        def __init__(self, template):
+    # Real working custom JS controls
+    class JSButtonControl(MacroElement):
+        def __init__(self, js_function, label, tooltip):
             super().__init__()
-            self._template = template
+            self._template = Template(f"""
+                {{% macro script(this, kwargs) %}}
+                var customBtn = L.control({{position: 'topleft'}});
+                customBtn.onAdd = function(map) {{
+                    var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                    div.innerHTML = '<button title="{tooltip}">{label}</button>';
+                    div.style.backgroundColor = 'white';
+                    div.style.padding = '5px';
+                    div.style.cursor = 'pointer';
+                    div.onclick = function() {{
+                        {js_function}
+                    }};
+                    return div;
+                }};
+                customBtn.addTo({{this._parent.get_name()}});
+                {{% endmacro %}}
+            """)
 
-    m.get_root().add_child(CustomJSControl(locate_js))
-    m.get_root().add_child(CustomJSControl(clear_js))
+    center_js = """
+    map.eachLayer(function(layer){
+        if(layer._locateOptions){
+            layer.start();
+        }
+    });
+    """
+
+    clear_js = """
+    map.eachLayer(function(layer){
+        if(layer instanceof L.FeatureGroup){
+            layer.clearLayers();
+        }
+    });
+    """
+
+    m.get_root().add_child(JSButtonControl(center_js, "📍 Center", "Center on my location"))
+    m.get_root().add_child(JSButtonControl(clear_js, "🗑️ Clear", "Clear all drawings"))
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
