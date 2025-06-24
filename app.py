@@ -9,7 +9,6 @@ import io
 import json
 from shapely.geometry import shape, Polygon
 from shapely.validation import explain_validity
-from geopy.geocoders import Nominatim
 import base64
 import os
 
@@ -39,31 +38,15 @@ if logo_base64:
 else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
-# ---------- Controls: Clear & Geolocate ----------
-col1, col2 = st.columns([1, 4])
-with col1:
-    clear_map = st.button("🗑️ Clear Map")
-with col2:
-    geocode_input = st.text_input("Search a place (optional):", label_visibility="collapsed", placeholder="🔍 Type a location…")
-
-lat, lon = 20, 0
-zoom = 2
-
-if geocode_input:
-    geolocator = Nominatim(user_agent="openatlas_locator")
-    location = geolocator.geocode(geocode_input)
-    if location:
-        lat, lon = location.latitude, location.longitude
-        zoom = 12
-    else:
-        st.warning("Place not found.")
+# ---------- Controls ----------
+clear_map = st.button("🗑️ Clear Map")
 
 # ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
 
 m = folium.Map(
-    location=[lat, lon],
-    zoom_start=zoom,
+    location=[20, 0],
+    zoom_start=2,
     control_scale=True,
     tiles=None
 )
@@ -104,16 +87,16 @@ if not clear_map:
 
 Geocoder().add_to(m)
 LayerControl().add_to(m)
-LocateControl().add_to(m)
+LocateControl(auto_start=True).add_to(m)
 
-output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
+output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
 # Zoom on drawn geometry if present
 if output and output.get("last_active_drawing"):
     try:
         feature = output["last_active_drawing"]
         geom = shape(feature["geometry"])
-        bounds = geom.bounds  # (minx, miny, maxx, maxy)
+        bounds = geom.bounds
         m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
     except Exception as e:
         st.warning("Could not zoom to geometry.")
@@ -165,7 +148,6 @@ if uploaded_file:
             if {'latitude', 'longitude'}.issubset(df.columns):
                 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
             else:
-                # Try to form a polygon
                 coords = df[['longitude', 'latitude']].values.tolist()
                 if len(coords) >= 3:
                     coords.append(coords[0])
@@ -193,26 +175,6 @@ if uploaded_file:
         if gdf is not None:
             st.success("File loaded successfully.")
             geojson_str = gdf.to_json(indent=2)
-            m = folium.Map(location=gdf.geometry.iloc[0].centroid.coords[0][::-1], zoom_start=12, control_scale=True, tiles=None)
-            folium.GeoJson(data=geojson_str, name="Uploaded GeoJSON").add_to(m)
-            folium.raster_layers.TileLayer(
-                tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-                name='Google Satellite',
-                attr='Google',
-                overlay=False,
-                control=True,
-                opacity=1.0
-            ).add_to(m)
-            folium.raster_layers.TileLayer(
-                tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                name='Labels (OSM)',
-                attr='© OpenStreetMap contributors',
-                overlay=True,
-                control=True,
-                opacity=0.3
-            ).add_to(m)
-            LayerControl().add_to(m)
-            st_folium(m, height=650, width=1100)
             st.download_button(
                 "📥 Download Cleaned GeoJSON",
                 data=geojson_str,
