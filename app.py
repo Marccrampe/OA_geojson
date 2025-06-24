@@ -83,7 +83,7 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.2
+    opacity=0.4
 ).add_to(m)
 
 if not clear_map:
@@ -103,7 +103,6 @@ if not clear_map:
 Geocoder().add_to(m)
 LayerControl().add_to(m)
 LocateControl().add_to(m)
-
 
 output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
 
@@ -205,7 +204,8 @@ if uploaded_file:
                 file_name=f"{file_name_input}_converted.geojson",
                 mime="application/geo+json",
                 use_container_width=True
-            )("📄 View GeoJSON content"):
+            )
+            with st.expander("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
     except Exception as e:
         st.error(f"Error processing the file: {e}")
