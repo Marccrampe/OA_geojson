@@ -2,7 +2,8 @@ import streamlit as st
 from streamlit_folium import st_folium
 import folium
 from folium.plugins import Draw, LocateControl, Geocoder
-from folium import LayerControl
+from folium import LayerControl, MacroElement
+from jinja2 import Template
 import geopandas as gpd
 import pandas as pd
 import io
@@ -102,25 +103,23 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
+    # -------- Trigger LocateControl button click via MacroElement JS --------
+    if locate_me:
+        class TriggerLocate(MacroElement):
+            _template = Template("""
+            {% macro script(this, kwargs) %}
+            setTimeout(function() {
+                var locateBtn = document.querySelector('.leaflet-control-locate a');
+                if (locateBtn) locateBtn.click();
+            }, 1000);
+            {% endmacro %}
+            """)
+        m.add_child(TriggerLocate())
+
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
     if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
-
-    # -------- Trigger LocateControl button click via JS --------
-    if locate_me:
-        st.components.v1.html(
-            """
-            <script>
-            setTimeout(() => {
-                const locateBtn = window.parent.document.querySelector('.leaflet-control-locate a');
-                if (locateBtn) locateBtn.click();
-            }, 1000);
-            </script>
-            """,
-            height=0,
-            width=0
-        )
 
     st.subheader("✅ Geometry Validation")
 
