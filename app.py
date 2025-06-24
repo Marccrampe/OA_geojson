@@ -83,7 +83,8 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.2
+    opacity=0.4
+    
 ).add_to(m)
 
 if not clear_map:
