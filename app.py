@@ -48,7 +48,7 @@ with tabs[0]:
     with col1:
         clear_map = st.button("🗑️ Clear Map")
     with col2:
-        st.markdown("📍 Click the target icon on the map (top right) to center on your current location.")
+        geoloc_trigger = st.button("📍 Center on My Location")
 
     if "map_center" not in st.session_state:
         st.session_state.map_center = [20, 0]
@@ -57,12 +57,17 @@ with tabs[0]:
         st.session_state.drawings = []
     if "clear_map_trigger" not in st.session_state:
         st.session_state.clear_map_trigger = 0
+    if "geoloc_click" not in st.session_state:
+        st.session_state.geoloc_click = 0
 
     st.subheader("🗺️ Draw your area")
 
     if clear_map:
         st.session_state.drawings = []
         st.session_state.clear_map_trigger += 1
+
+    if geoloc_trigger:
+        st.session_state.geoloc_click += 1
 
     m = folium.Map(
         location=st.session_state.map_center,
@@ -108,7 +113,7 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    # Inject JavaScript to clear drawings if clear_map was clicked
+    # Inject JS to clear drawings
     if clear_map:
         class ClearDrawJS(MacroElement):
             _template = Template("""
@@ -123,12 +128,26 @@ with tabs[0]:
             """)
         m.add_child(ClearDrawJS())
 
+    # Inject JS to simulate click on LocateControl
+    if geoloc_trigger:
+        class ClickLocateControlJS(MacroElement):
+            _template = Template("""
+                {% macro script(this, kwargs) %}
+                setTimeout(function() {
+                    let map = {{this._parent.get_name()}};
+                    let locateBtn = document.querySelector('.leaflet-control-locate a');
+                    if (locateBtn) locateBtn.click();
+                }, 100);
+                {% endmacro %}
+            """)
+        m.add_child(ClickLocateControlJS())
+
     output = st_folium(
         m,
         height=700,
         width=1200,
         returned_objects=["last_active_drawing", "all_drawings"],
-        key=f"map_draw_{st.session_state.clear_map_trigger}"
+        key=f"map_draw_{st.session_state.clear_map_trigger}_{st.session_state.geoloc_click}"
     )
 
     if output and output.get("last_active_drawing"):
@@ -174,3 +193,4 @@ with tabs[0]:
             st.error(f"Could not parse geometry: {e}")
     else:
         st.info("Draw a polygon or rectangle above to enable validation.")
+
