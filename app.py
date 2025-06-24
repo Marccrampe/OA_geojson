@@ -2,8 +2,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 import folium
 from folium.plugins import Draw, LocateControl, Geocoder
-from folium import LayerControl, MacroElement
-from jinja2 import Template
+from folium import LayerControl
 import geopandas as gpd
 import pandas as pd
 import io
@@ -42,18 +41,24 @@ else:
 # ---------- Tabs ----------
 tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
 
-# ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     with col1:
         clear_map = st.button("🗑️ Clear Map")
     with col2:
-        geoloc_trigger = st.button("📍 Center on My Location")
+        locate_me = st.button("📍 Center on My Location")
 
     if "map_center" not in st.session_state:
         st.session_state.map_center = [20, 0]
         st.session_state.zoom = 2
     if "drawings" not in st.session_state:
+        st.session_state.drawings = []
+
+    if locate_me:
+        st.session_state.map_center = [0, 0]
+        st.session_state.zoom = 12
+
+    if clear_map:
         st.session_state.drawings = []
 
     st.subheader("🗺️ Draw your area")
@@ -83,7 +88,7 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    draw_plugin = Draw(
+    Draw(
         export=True,
         filename='drawn.geojson',
         draw_options={
@@ -93,46 +98,16 @@ with tabs[0]:
             'circle': False,
             'marker': False,
             'circlemarker': False
-        },
-        edit_options={'edit': True, 'remove': True}
-    )
-    draw_plugin.add_to(m)
+        }
+    ).add_to(m)
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    # Inject JS to simulate click on clear all (no refresh)
-    if clear_map:
-        st.components.v1.html("""
-        <script>
-            setTimeout(() => {
-                const btns = window.parent.document.querySelectorAll('.leaflet-draw-edit-remove');
-                btns.forEach(btn => btn.click());
-            }, 300);
-        </script>
-        """, height=0)
-        st.session_state.drawings = []
+    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
-    # Inject JS to simulate click on LocateControl
-    if geoloc_trigger:
-        st.components.v1.html("""
-        <script>
-            setTimeout(() => {
-                const locateBtn = window.parent.document.querySelector('.leaflet-control-locate a');
-                if (locateBtn) locateBtn.click();
-            }, 300);
-        </script>
-        """, height=0)
-
-    output = st_folium(
-        m,
-        height=700,
-        width=1200,
-        returned_objects=["last_active_drawing", "all_drawings"]
-    )
-
-    if output and output.get("last_active_drawing"):
+    if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
 
     st.subheader("✅ Geometry Validation")
@@ -166,3 +141,93 @@ with tabs[0]:
             st.error(f"Could not parse geometry: {e}")
     else:
         st.info("Draw a polygon or rectangle above to enable validation.")
+
+with tabs[1]:
+    st.subheader("📂 Upload your file")
+
+    uploaded_file = st.file_uploader("Upload an Excel (.xlsx), CSV (.csv), or GeoJSON file", type=["xlsx", "csv", "geojson", "json"])
+
+    file_name_input = st.text_input("Name your exported file (without extension):", value="uploaded_area")
+
+    if uploaded_file:
+        try:
+            gdf = None
+            if uploaded_file.name.endswith(".xlsx"):
+                df = pd.read_excel(uploaded_file)
+                coords = df[['longitude', 'latitude']].values.tolist()
+                if len(coords) >= 3:
+                    coords.append(coords[0])
+                    poly = Polygon(coords)
+                    gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
+            elif uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+                coords = df[['longitude', 'latitude']].values.tolist()
+                if len(coords) >= 3:
+                    coords.append(coords[0])
+                    poly = Polygon(coords)
+                    gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
+            elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
+                gdf = gpd.read_file(uploaded_file)
+
+            if gdf is not None:
+                st.success("File loaded successfully.")
+                geojson_str = gdf.to_json(indent=2)
+
+                bounds = gdf.total_bounds
+                center = [
+                    (bounds[1] + bounds[3]) / 2,
+                    (bounds[0] + bounds[2]) / 2
+                ]
+                zoom = 16 if (bounds[2] - bounds[0] < 0.1 and bounds[3] - bounds[1] < 0.1) else 12
+
+                m2 = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
+                folium.raster_layers.TileLayer(
+                    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+                    name='Google Satellite',
+                    attr='Google',
+                    overlay=False,
+                    control=True,
+                    opacity=1.0
+                ).add_to(m2)
+
+                folium.raster_layers.TileLayer(
+                    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    name='Labels (OSM)',
+                    attr='© OpenStreetMap contributors',
+                    overlay=True,
+                    control=True,
+                    opacity=0.4
+                ).add_to(m2)
+
+                folium.GeoJson(gdf, name="Uploaded Polygon").add_to(m2)
+
+                Draw(
+                    export=True,
+                    draw_options={
+                        'polygon': True,
+                        'rectangle': True,
+                        'polyline': False,
+                        'circle': False,
+                        'marker': False,
+                        'circlemarker': False
+                    },
+                    edit_options={'edit': True, 'remove': True}
+                ).add_to(m2)
+
+                LayerControl().add_to(m2)
+                LocateControl().add_to(m2)
+
+                st_folium(m2, height=650, width=1100)
+
+                st.download_button(
+                    "📥 Download Cleaned GeoJSON",
+                    data=geojson_str,
+                    file_name=f"{file_name_input}_converted.geojson",
+                    mime="application/geo+json",
+                    use_container_width=True
+                )
+
+                with st.expander("📄 View GeoJSON content"):
+                    st.code(geojson_str, language='json')
+        except Exception as e:
+            st.error(f"Error processing the file: {e}")
