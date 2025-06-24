@@ -55,7 +55,7 @@ with tabs[0]:
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
     if "clear_map_trigger" not in st.session_state:
-        st.session_state.clear_map_trigger = False
+        st.session_state.clear_map_trigger = 0
 
     if locate_me:
         st.session_state.map_center = [0, 0]
@@ -65,7 +65,7 @@ with tabs[0]:
 
     if clear_map:
         st.session_state.drawings = []
-        st.session_state.clear_map_trigger = not st.session_state.clear_map_trigger
+        st.session_state.clear_map_trigger += 1
 
     m = folium.Map(
         location=st.session_state.map_center,
@@ -103,7 +103,7 @@ with tabs[0]:
             'marker': False,
             'circlemarker': False
         },
-        edit_options={'edit': True}
+        edit_options={'edit': True, 'remove': True}
     )
     draw_plugin.add_to(m)
 
@@ -121,7 +121,6 @@ with tabs[0]:
 
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
-        # Update center and zoom based on latest drawing
         try:
             geom = shape(output["last_active_drawing"]["geometry"])
             bounds = geom.bounds
