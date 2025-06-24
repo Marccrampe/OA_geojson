@@ -54,12 +54,18 @@ with tabs[0]:
         st.session_state.zoom = 2
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
+    if "clear_map_trigger" not in st.session_state:
+        st.session_state.clear_map_trigger = False
 
     if locate_me:
         st.session_state.map_center = [0, 0]
         st.session_state.zoom = 12
 
     st.subheader("🗺️ Draw your area")
+
+    if clear_map:
+        st.session_state.drawings = []
+        st.session_state.clear_map_trigger = not st.session_state.clear_map_trigger
 
     m = folium.Map(
         location=st.session_state.map_center,
@@ -86,9 +92,6 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    if clear_map:
-        st.session_state.drawings = []
-
     draw_plugin = Draw(
         export=True,
         filename='drawn.geojson',
@@ -108,7 +111,13 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
+    output = st_folium(
+        m,
+        height=700,
+        width=1200,
+        returned_objects=["last_active_drawing", "all_drawings"],
+        key=f"map_draw_{st.session_state.clear_map_trigger}"
+    )
 
     if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
