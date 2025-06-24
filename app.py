@@ -119,8 +119,8 @@ with tabs[0]:
             _template = Template("""
                 {% macro script(this, kwargs) %}
                 setTimeout(function() {
-                    let clearBtn = document.querySelector('.leaflet-draw-edit-remove');
-                    if (clearBtn) clearBtn.click();
+                    const buttons = document.querySelectorAll('.leaflet-draw-edit-remove');
+                    buttons.forEach(btn => btn.click());
                 }, 300);
                 {% endmacro %}
             """)
