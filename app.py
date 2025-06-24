@@ -27,6 +27,70 @@ logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 # ---------- Page config ----------
 
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
+st.markdown("""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        html, body, .stApp {
+            background-color: #F7F9FC;
+            font-family: 'Inter', sans-serif;
+            color: #1c1c1c;
+        }
+
+        h1, h2, h3, h4 {
+            color: #1c1c1c;
+            font-weight: 600;
+        }
+
+        .stButton>button {
+            background-color: #4A1CFC;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.75em 1.5em;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .stButton>button:hover {
+            background-color: #3a17d9;
+        }
+
+        .stDownloadButton>button {
+            background-color: #00CBA1;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.75em 1.5em;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .stDownloadButton>button:hover {
+            background-color: #00b292;
+        }
+
+        .stTextInput>div>div>input {
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            padding: 0.5em;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4A1CFC;
+        }
+
+        .css-1cpxqw2, .css-1d391kg {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .stExpanderHeader {
+            font-weight: 600;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # ---------- Header ----------
 if logo_base64:
