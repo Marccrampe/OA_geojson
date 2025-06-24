@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
-from folium.plugins import Draw
+from folium.plugins import Draw, LocateControl, Search
 from folium import LayerControl
 import geopandas as gpd
 import pandas as pd
@@ -11,31 +11,38 @@ from shapely.geometry import shape
 from shapely.validation import explain_validity
 from geopy.geocoders import Nominatim
 import base64
+import os
 
 # ---------- Load and encode logo ----------
 def get_base64_of_bin_file(bin_file_path):
-    with open(bin_file_path, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+    if os.path.exists(bin_file_path):
+        with open(bin_file_path, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    else:
+        return None
 
-logo_base64 = get_base64_of_bin_file("open-atlas-logo.png")
+logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 
 # ---------- Page config ----------
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
 
 # ---------- Header ----------
-st.markdown(f"""
-    <div style='display: flex; align-items: center;'>
-        <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-right: 20px;'>
-        <h2 style='margin: 0;'>Draw or Upload Your Land Area (EUDR-compliant)</h2>
-    </div>
-    <p>Draw your territory, or upload an Excel/GeoJSON file, and get a validated GeoJSON file.</p>
-""", unsafe_allow_html=True)
+if logo_base64:
+    st.markdown(f"""
+        <div style='display: flex; align-items: center;'>
+            <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-right: 20px;'>
+            <h2 style='margin: 0;'>Draw or Upload Your Land Area (EUDR-compliant)</h2>
+        </div>
+        <p>Draw your territory, or upload an Excel/GeoJSON file, and get a validated GeoJSON file.</p>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Sidebar search ----------
 st.sidebar.subheader("📍 Locate your area")
 geocode_input = st.sidebar.text_input("Search a place (optional):")
-lat, lon = 0, 0
+lat, lon = 20, 0  # Default to center of the world
 zoom = 2
 
 if geocode_input:
@@ -43,7 +50,7 @@ if geocode_input:
     location = geolocator.geocode(geocode_input)
     if location:
         lat, lon = location.latitude, location.longitude
-        zoom = 15
+        zoom = 12
     else:
         st.sidebar.warning("Place not found.")
 
@@ -74,15 +81,18 @@ with col1:
     ).add_to(m)
 
     LayerControl().add_to(m)
+    LocateControl().add_to(m)
 
-    output = st_folium(m, height=600, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
+    output = st_folium(m, height=500, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
+
+with col2:
+    st.markdown("### ✏️ GeoJSON Preview")
+    geojson_str = ""
 
 # ---------- Geometry validation ----------
-st.markdown("---")
 st.subheader("✅ Geometry Validation")
 
 file_name_input = st.text_input("Name your file (without extension):", value="your_area")
-geojson_str = ""
 
 if output and output.get("last_active_drawing"):
     try:
@@ -94,6 +104,8 @@ if output and output.get("last_active_drawing"):
         if geom.is_valid:
             st.success("Geometry is valid!")
             geojson_str = json.dumps(geojson_obj, indent=2)
+            with col2:
+                st.code(geojson_str, language='json')
             st.download_button(
                 "📥 Download GeoJSON",
                 data=geojson_str,
@@ -108,11 +120,6 @@ if output and output.get("last_active_drawing"):
         st.error(f"Could not parse geometry: {e}")
 else:
     st.info("Draw a polygon or rectangle above to enable validation.")
-
-with col2:
-    st.markdown("### ✏️ GeoJSON Preview")
-    if geojson_str:
-        st.code(geojson_str, language='json')
 
 # ---------- File upload ----------
 st.markdown("---")
