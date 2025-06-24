@@ -108,8 +108,8 @@ with tabs[0]:
             _template = Template("""
                 {% macro script(this, kwargs) %}
                 setTimeout(function() {
-                    const toolbar = document.querySelector('.leaflet-draw-actions a[title="Delete layers"]');
-                    if (toolbar) toolbar.click();
+                    const removeBtn = document.querySelectorAll('.leaflet-draw-edit-remove');
+                    if (removeBtn.length > 0) removeBtn[0].click();
                 }, 300);
                 {% endmacro %}
             """)
