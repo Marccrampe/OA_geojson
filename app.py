@@ -57,6 +57,8 @@ if geocode_input:
 # ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
 
+clear_map = st.button("🗑️ Clear Map")
+
 m = folium.Map(
     location=[lat, lon],
     zoom_start=zoom,
@@ -81,42 +83,33 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.05
-).add_to(m)
-
-# Add transparent OSM label layer
-folium.raster_layers.TileLayer(
-    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    name='Labels (OSM)',
-    attr='© OpenStreetMap contributors',
-    overlay=True,
-    control=True,
     opacity=0.4
 ).add_to(m)
 
-Draw(
-    export=True,
-    filename='drawn.geojson',
-    draw_options={
-        'polygon': True,
-        'rectangle': True,
-        'polyline': False,
-        'circle': False,
-        'marker': False,
-        'circlemarker': False
-    }
-).add_to(m)
+if not clear_map:
+    Draw(
+        export=True,
+        filename='drawn.geojson',
+        draw_options={
+            'polygon': True,
+            'rectangle': True,
+            'polyline': False,
+            'circle': False,
+            'marker': False,
+            'circlemarker': False
+        }
+    ).add_to(m)
+
 Geocoder().add_to(m)
 LayerControl().add_to(m)
 LocateControl().add_to(m)
-output = st_folium(m, height=400, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
+output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
 
 # ---------- Geometry validation ----------
 st.subheader("✅ Geometry Validation")
 
 file_name_input = st.text_input("Name your file (without extension):", value="your_area")
 geojson_str = ""
-
 geojson_placeholder = st.empty()
 
 if output and output.get("last_active_drawing"):
@@ -129,14 +122,6 @@ if output and output.get("last_active_drawing"):
         if geom.is_valid:
             st.success("Geometry is valid!")
             geojson_str = json.dumps(geojson_obj, indent=2)
-            st.download_button(
-                "📥 Download GeoJSON",
-                data=geojson_str,
-                file_name=f"{file_name_input}.geojson",
-                mime="application/geo+json",
-                use_container_width=True,
-                type="primary"
-            )
             with st.expander("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
         else:
@@ -154,29 +139,24 @@ uploaded_file = st.file_uploader("Upload an Excel (.xlsx), CSV (.csv), or GeoJSO
 
 if uploaded_file:
     try:
+        gdf = None
         if uploaded_file.name.endswith(".xlsx"):
             df = pd.read_excel(uploaded_file)
             if {'latitude', 'longitude'}.issubset(df.columns):
                 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
             else:
                 st.warning("Excel must have 'latitude' and 'longitude' columns.")
-                gdf = None
         elif uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
             if {'latitude', 'longitude'}.issubset(df.columns):
                 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
             else:
                 st.warning("CSV must have 'latitude' and 'longitude' columns.")
-                gdf = None
         elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
             gdf = gpd.read_file(uploaded_file)
-        else:
-            st.warning("Unsupported file format.")
-            gdf = None
 
         if gdf is not None:
             st.success("File loaded successfully.")
-            st.map(gdf)
             geojson_str = gdf.to_json(indent=2)
             st.download_button(
                 "📥 Download Cleaned GeoJSON",
