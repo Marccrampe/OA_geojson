@@ -39,7 +39,7 @@ else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Controls ----------
-col1, col2 = st.columns([1, 1])
+col1, col2, col3 = st.columns([1, 1, 1])
 with col1:
     clear_map = st.button("🗑️ Clear Map")
 with col2:
@@ -75,27 +75,27 @@ folium.raster_layers.TileLayer(
     opacity=0.4
 ).add_to(m)
 
-if not clear_map:
-    Draw(
-        export=True,
-        filename='drawn.geojson',
-        draw_options={
-            'polygon': True,
-            'rectangle': True,
-            'polyline': False,
-            'circle': False,
-            'marker': False,
-            'circlemarker': False
-        }
-    ).add_to(m)
+Draw(
+    export=True,
+    filename='drawn.geojson',
+    draw_options={
+        'polygon': True,
+        'rectangle': True,
+        'polyline': False,
+        'circle': False,
+        'marker': False,
+        'circlemarker': False
+    }
+).add_to(m)
 
 Geocoder().add_to(m)
 LayerControl().add_to(m)
-
 if locate_me:
     LocateControl(auto_start=True).add_to(m)
 
 output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
+if clear_map:
+    output = {"last_active_drawing": None, "all_drawings": []}
 
 # Zoom on drawn geometry if present
 if output and output.get("last_active_drawing"):
