@@ -83,7 +83,7 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.4
+    opacity=0.2
 ).add_to(m)
 
 if not clear_map:
@@ -103,7 +103,7 @@ if not clear_map:
 Geocoder().add_to(m)
 LayerControl().add_to(m)
 LocateControl().add_to(m)
-output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
+output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"], center_on_feature=True)
 
 # ---------- Geometry validation ----------
 st.subheader("✅ Geometry Validation")
