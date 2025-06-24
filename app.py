@@ -103,7 +103,14 @@ if not clear_map:
 Geocoder().add_to(m)
 LayerControl().add_to(m)
 LocateControl().add_to(m)
-output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"], center_on_feature=True)
+if output and output.get("last_active_drawing"):
+    try:
+        bounds = folium.GeoJson(output["last_active_drawing"]).get_bounds()
+        m.fit_bounds(bounds)
+    except Exception as e:
+        st.warning("Could not zoom to geometry.")
+
+output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
 
 # ---------- Geometry validation ----------
 st.subheader("✅ Geometry Validation")
