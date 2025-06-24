@@ -108,7 +108,7 @@ with tabs[0]:
             'marker': False,
             'circlemarker': False
         },
-        edit_options={"edit": false, "remove": false}  # prevent multi-edit/removal
+        edit_options={"edit": False, "remove": False}  # prevent multi-edit/removal
     ).add_to(m)
 
     Geocoder(add_marker=False, collapsed=True).add_to(m)
@@ -170,4 +170,3 @@ with tabs[0]:
             st.error(f"Could not parse geometry: {e}")
     else:
         st.info("Draw a polygon or rectangle above to enable validation.")
-
