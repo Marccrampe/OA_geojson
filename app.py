@@ -116,7 +116,7 @@ with tabs[0]:
         m.add_child(ClearDrawJS())
         st.session_state.drawings = []
 
-    # Inject JS to simulate click on LocateControl
+    # Inject JS to simulate click on LocateControl (no center/zoom change from backend)
     if geoloc_trigger:
         class ClickLocateControlJS(MacroElement):
             _template = Template("""
@@ -136,6 +136,7 @@ with tabs[0]:
         returned_objects=["last_active_drawing", "all_drawings"]
     )
 
+    # Do NOT auto-update center/zoom anymore after drawing
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
