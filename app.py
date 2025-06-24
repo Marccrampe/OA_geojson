@@ -41,6 +41,7 @@ else:
 # ---------- Tabs ----------
 tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
 
+# ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     with col1:
@@ -142,8 +143,9 @@ with tabs[0]:
     else:
         st.info("Draw a polygon or rectangle above to enable validation.")
 
+# ---------------------- TAB 2: UPLOAD & COMPARE ---------------------
 with tabs[1]:
-    st.subheader("📂 Upload your file")
+    st.subheader("📂 Upload and Compare")
 
     uploaded_file = st.file_uploader("Upload an Excel (.xlsx), CSV (.csv), or GeoJSON file", type=["xlsx", "csv", "geojson", "json"])
 
@@ -180,54 +182,55 @@ with tabs[1]:
                 ]
                 zoom = 16 if (bounds[2] - bounds[0] < 0.1 and bounds[3] - bounds[1] < 0.1) else 12
 
-                m2 = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
-                folium.raster_layers.TileLayer(
-                    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-                    name='Google Satellite',
-                    attr='Google',
-                    overlay=False,
-                    control=True,
-                    opacity=1.0
-                ).add_to(m2)
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**Original Polygon** (Red)")
+                    m_left = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
+                    folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', name='Google Satellite', attr='Google').add_to(m_left)
+                    folium.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', name='OSM', attr='© OpenStreetMap').add_to(m_left)
+                    folium.GeoJson(gdf, name="Original", style_function=lambda x: {"color": "red"}).add_to(m_left)
+                    st_folium(m_left, height=500, width=550)
 
-                folium.raster_layers.TileLayer(
-                    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    name='Labels (OSM)',
-                    attr='© OpenStreetMap contributors',
-                    overlay=True,
-                    control=True,
-                    opacity=0.4
-                ).add_to(m2)
+                with col2:
+                    st.markdown("**Draw New Polygon** (Green)")
+                    m_right = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
+                    folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', name='Google Satellite', attr='Google').add_to(m_right)
+                    folium.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', name='OSM', attr='© OpenStreetMap').add_to(m_right)
+                    Draw(
+                        export=True,
+                        filename='modified.geojson',
+                        draw_options={
+                            'polygon': True,
+                            'rectangle': True,
+                            'polyline': False,
+                            'circle': False,
+                            'marker': False,
+                            'circlemarker': False
+                        }
+                    ).add_to(m_right)
+                    LayerControl().add_to(m_right)
+                    LocateControl().add_to(m_right)
+                    output_new = st_folium(m_right, height=500, width=550, returned_objects=["last_active_drawing"])
 
-                folium.GeoJson(gdf, name="Uploaded Polygon").add_to(m2)
-
-                Draw(
-                    export=True,
-                    draw_options={
-                        'polygon': True,
-                        'rectangle': True,
-                        'polyline': False,
-                        'circle': False,
-                        'marker': False,
-                        'circlemarker': False
-                    },
-                    edit_options={'edit': True, 'remove': True}
-                ).add_to(m2)
-
-                LayerControl().add_to(m2)
-                LocateControl().add_to(m2)
-
-                st_folium(m2, height=650, width=1100)
+                final_geojson = geojson_str
+                if output_new and output_new.get("last_active_drawing"):
+                    new_geojson_obj = {
+                        "type": "FeatureCollection",
+                        "features": [output_new["last_active_drawing"]]
+                    }
+                    final_geojson = json.dumps(new_geojson_obj, indent=2)
+                    st.success("New polygon drawn. You can now export it.")
 
                 st.download_button(
-                    "📥 Download Cleaned GeoJSON",
-                    data=geojson_str,
-                    file_name=f"{file_name_input}_converted.geojson",
+                    "📥 Download Final GeoJSON",
+                    data=final_geojson,
+                    file_name=f"{file_name_input}_final.geojson",
                     mime="application/geo+json",
                     use_container_width=True
                 )
 
-                with st.expander("📄 View GeoJSON content"):
-                    st.code(geojson_str, language='json')
+                with st.expander("📄 View Final GeoJSON content"):
+                    st.code(final_geojson, language='json')
+
         except Exception as e:
             st.error(f"Error processing the file: {e}")
