@@ -39,9 +39,13 @@ if logo_base64:
 else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
-# ---------- Sidebar search ----------
-st.sidebar.subheader("📍 Locate your area")
-geocode_input = st.sidebar.text_input("Search a place (optional):")
+# ---------- Controls: Clear & Geolocate ----------
+col1, col2 = st.columns([1, 4])
+with col1:
+    clear_map = st.button("🗑️ Clear Map")
+with col2:
+    geocode_input = st.text_input("Search a place (optional):", label_visibility="collapsed", placeholder="🔍 Type a location…")
+
 lat, lon = 20, 0
 zoom = 2
 
@@ -52,12 +56,10 @@ if geocode_input:
         lat, lon = location.latitude, location.longitude
         zoom = 12
     else:
-        st.sidebar.warning("Place not found.")
+        st.warning("Place not found.")
 
 # ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
-
-clear_map = st.button("🗑️ Clear Map")
 
 m = folium.Map(
     location=[lat, lon],
@@ -84,7 +86,6 @@ folium.raster_layers.TileLayer(
     overlay=True,
     control=True,
     opacity=0.4
-    
 ).add_to(m)
 
 if not clear_map:
@@ -106,6 +107,16 @@ LayerControl().add_to(m)
 LocateControl().add_to(m)
 
 output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
+
+# Zoom on drawn geometry if present
+if output and output.get("last_active_drawing"):
+    try:
+        feature = output["last_active_drawing"]
+        geom = shape(feature["geometry"])
+        bounds = geom.bounds  # (minx, miny, maxx, maxy)
+        m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+    except Exception as e:
+        st.warning("Could not zoom to geometry.")
 
 # ---------- Geometry validation ----------
 st.subheader("✅ Geometry Validation")
@@ -150,40 +161,40 @@ if uploaded_file:
     try:
         gdf = None
         if uploaded_file.name.endswith(".xlsx"):
-            df = pd.read_excel(uploaded_file, engine="openpyxl")
+            df = pd.read_excel(uploaded_file)
             if {'latitude', 'longitude'}.issubset(df.columns):
-                coords = list(zip(df['longitude'], df['latitude']))
-                if coords[0] != coords[-1]:
-                    coords.append(coords[0])
-                polygon = Polygon(coords)
-                gdf = gpd.GeoDataFrame(index=[0], geometry=[polygon], crs='EPSG:4326')
+                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
             else:
-                st.warning("Excel must have 'latitude' and 'longitude' columns.")
+                # Try to form a polygon
+                coords = df[['longitude', 'latitude']].values.tolist()
+                if len(coords) >= 3:
+                    coords.append(coords[0])
+                    poly = Polygon(coords)
+                    gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
+                else:
+                    st.warning("Not enough points to form a polygon.")
+
         elif uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
             if {'latitude', 'longitude'}.issubset(df.columns):
-                coords = list(zip(df['longitude'], df['latitude']))
-                if coords[0] != coords[-1]:
-                    coords.append(coords[0])
-                polygon = Polygon(coords)
-                gdf = gpd.GeoDataFrame(index=[0], geometry=[polygon], crs='EPSG:4326')
+                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
             else:
-                st.warning("CSV must have 'latitude' and 'longitude' columns.")
+                coords = df[['longitude', 'latitude']].values.tolist()
+                if len(coords) >= 3:
+                    coords.append(coords[0])
+                    poly = Polygon(coords)
+                    gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
+                else:
+                    st.warning("Not enough points to form a polygon.")
+
         elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
             gdf = gpd.read_file(uploaded_file)
 
         if gdf is not None:
             st.success("File loaded successfully.")
             geojson_str = gdf.to_json(indent=2)
-            st.download_button(
-                "📥 Download Cleaned GeoJSON",
-                data=geojson_str,
-                file_name=f"{file_name_input}_converted.geojson",
-                mime="application/geo+json",
-                use_container_width=True
-            )
-            m = folium.Map(location=[gdf.geometry[0].centroid.y, gdf.geometry[0].centroid.x],
-                           zoom_start=14, control_scale=True, tiles=None)
+            m = folium.Map(location=gdf.geometry.iloc[0].centroid.coords[0][::-1], zoom_start=12, control_scale=True, tiles=None)
+            folium.GeoJson(data=geojson_str, name="Uploaded GeoJSON").add_to(m)
             folium.raster_layers.TileLayer(
                 tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
                 name='Google Satellite',
@@ -198,11 +209,17 @@ if uploaded_file:
                 attr='© OpenStreetMap contributors',
                 overlay=True,
                 control=True,
-                opacity=0.4
+                opacity=0.3
             ).add_to(m)
-            folium.GeoJson(data=geojson_str, name="Uploaded Geometry").add_to(m)
             LayerControl().add_to(m)
             st_folium(m, height=650, width=1100)
+            st.download_button(
+                "📥 Download Cleaned GeoJSON",
+                data=geojson_str,
+                file_name=f"{file_name_input}_converted.geojson",
+                mime="application/geo+json",
+                use_container_width=True
+            )
             with st.expander("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
     except Exception as e:
