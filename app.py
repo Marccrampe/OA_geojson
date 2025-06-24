@@ -62,7 +62,7 @@ with tabs[0]:
     st.subheader("🗺️ Draw your area")
 
     m = folium.Map(
-        location=st.session_state.map_center,
+        location=st.session_state.map_center if isinstance(st.session_state.map_center, list) else [20, 0],
         zoom_start=st.session_state.zoom,
         control_scale=True,
         tiles=None
@@ -101,8 +101,10 @@ with tabs[0]:
 
     Geocoder(add_marker=False, collapsed=True).add_to(m)
     LayerControl().add_to(m)
-    if locate_me:
-        class JSLocate(MacroElement):
+
+    # Inject custom JS only once to locate if needed
+    if st.session_state.map_center == "locate":
+        class JSLocateInit(MacroElement):
             _template = Template("""
             {% macro script(this, kwargs) %}
             if (navigator.geolocation) {
@@ -115,7 +117,10 @@ with tabs[0]:
             }
             {% endmacro %}
             """)
-        m.add_child(JSLocate())
+        m.add_child(JSLocateInit())
+        st.session_state.map_center = [20, 0]  # Reset after locate
+    if locate_me:
+        st.session_state.map_center = "locate"
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
