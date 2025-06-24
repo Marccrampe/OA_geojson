@@ -183,34 +183,30 @@ with tabs[1]:
                 zoom = 16 if (bounds[2] - bounds[0] < 0.1 and bounds[3] - bounds[1] < 0.1) else 12
 
                 col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**Original Polygon** (Red)")
-                    m_left = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
-                    folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', name='Google Satellite', attr='Google').add_to(m_left)
-                    folium.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', name='OSM', attr='© OpenStreetMap').add_to(m_left)
-                    folium.GeoJson(gdf, name="Original", style_function=lambda x: {"color": "red"}).add_to(m_left)
-                    st_folium(m_left, height=500, width=550)
-
-                with col2:
-                    st.markdown("**Draw New Polygon** (Green)")
-                    m_right = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
-                    folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', name='Google Satellite', attr='Google').add_to(m_right)
-                    folium.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', name='OSM', attr='© OpenStreetMap').add_to(m_right)
-                    Draw(
-                        export=True,
-                        filename='modified.geojson',
-                        draw_options={
-                            'polygon': True,
-                            'rectangle': True,
-                            'polyline': False,
-                            'circle': False,
-                            'marker': False,
-                            'circlemarker': False
-                        }
-                    ).add_to(m_right)
-                    LayerControl().add_to(m_right)
-                    LocateControl().add_to(m_right)
-                    output_new = st_folium(m_right, height=500, width=550, returned_objects=["last_active_drawing"])
+                for col, color, title in zip([col1, col2], ["red", "green"], ["**Original Polygon** (Red)", "**Draw New Polygon** (Green)"]):
+                    col.markdown(title)
+                    map_obj = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
+                    folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', name='Google Satellite', attr='Google').add_to(map_obj)
+                    folium.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', name='Labels (OSM)', attr='© OpenStreetMap').add_to(map_obj)
+                    if color == "red":
+                        folium.GeoJson(gdf, name="Original", style_function=lambda x: {"color": "red"}).add_to(map_obj)
+                        st_folium(map_obj, height=500, width=550)
+                    else:
+                        Draw(
+                            export=True,
+                            filename='modified.geojson',
+                            draw_options={
+                                'polygon': True,
+                                'rectangle': True,
+                                'polyline': False,
+                                'circle': False,
+                                'marker': False,
+                                'circlemarker': False
+                            }
+                        ).add_to(map_obj)
+                        LayerControl().add_to(map_obj)
+                        LocateControl().add_to(map_obj)
+                        output_new = st_folium(map_obj, height=500, width=550, returned_objects=["last_active_drawing"])
 
                 final_geojson = geojson_str
                 if output_new and output_new.get("last_active_drawing"):
