@@ -56,8 +56,7 @@ with tabs[0]:
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
 
-    if clear_map:
-        st.session_state.drawings = []
+    # Clear map button is now obsolete (single polygon mode)
 
     st.subheader("🗺️ Draw your area")
 
@@ -90,13 +89,26 @@ with tabs[0]:
         export=True,
         filename='drawn.geojson',
         draw_options={
-            'polygon': True,
-            'rectangle': True,
+            'polygon': {
+                'shapeOptions': {
+                    'color': 'green',  # Change polygon stroke color here
+                    'fillColor': 'green',
+                    'fillOpacity': 0.3
+                }
+            },
+            'rectangle': {
+                'shapeOptions': {
+                    'color': 'green',
+                    'fillColor': 'green',
+                    'fillOpacity': 0.3
+                }
+            },
             'polyline': False,
             'circle': False,
             'marker': False,
             'circlemarker': False
-        }
+        },
+        edit_options={"edit": false, "remove": false}  # prevent multi-edit/removal
     ).add_to(m)
 
     Geocoder(add_marker=False, collapsed=True).add_to(m)
@@ -124,7 +136,7 @@ with tabs[0]:
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
-    if output and output.get("last_active_drawing") and not clear_map:
+    if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
     st.subheader("✅ Geometry Validation")
@@ -158,3 +170,4 @@ with tabs[0]:
             st.error(f"Could not parse geometry: {e}")
     else:
         st.info("Draw a polygon or rectangle above to enable validation.")
+
