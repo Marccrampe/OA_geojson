@@ -101,13 +101,9 @@ with tabs[0]:
 
     Geocoder(add_marker=False, collapsed=True).add_to(m)
     LayerControl().add_to(m)
-    LocateControl(
-        auto_start=False,
-        flyTo=False,  # <- empêche le pan brutal
-        keepCurrentZoomLevel=True  # <- garde ton zoom actuel
-    ).add_to(m)
+    LocateControl(auto_start=False, flyTo=False, keepCurrentZoomLevel=True).add_to(m)
 
-# JS qui simule un clic sur le bouton LocateControl
+    # -------- Trigger LocateControl button click via MacroElement JS --------
     if locate_me:
         class TriggerLocate(MacroElement):
             _template = Template("""
@@ -119,8 +115,6 @@ with tabs[0]:
             {% endmacro %}
             """)
         m.add_child(TriggerLocate())
-
-    
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
