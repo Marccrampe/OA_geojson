@@ -2,7 +2,8 @@ import streamlit as st
 from streamlit_folium import st_folium
 import folium
 from folium.plugins import Draw, LocateControl, Geocoder
-from folium import LayerControl
+from folium import LayerControl, MacroElement
+from jinja2 import Template
 import geopandas as gpd
 import pandas as pd
 import io
@@ -47,7 +48,7 @@ with tabs[0]:
     with col1:
         clear_map = st.button("🗑️ Clear Map")
     with col2:
-        locate_me = st.button("📍 Center on My Location")
+        st.markdown("📍 Click the target icon on the map (top right) to center on your current location.")
 
     if "map_center" not in st.session_state:
         st.session_state.map_center = [20, 0]
@@ -56,10 +57,6 @@ with tabs[0]:
         st.session_state.drawings = []
     if "clear_map_trigger" not in st.session_state:
         st.session_state.clear_map_trigger = 0
-
-    if locate_me:
-        st.session_state.map_center = [0, 0]
-        st.session_state.zoom = 12
 
     st.subheader("🗺️ Draw your area")
 
@@ -110,6 +107,21 @@ with tabs[0]:
     Geocoder().add_to(m)
     LayerControl().add_to(m)
     LocateControl().add_to(m)
+
+    # Inject JavaScript to clear drawings if clear_map was clicked
+    if clear_map:
+        class ClearDrawJS(MacroElement):
+            _template = Template("""
+                {% macro script(this, kwargs) %}
+                setTimeout(function() {
+                    let map = {{this._parent.get_name()}};
+                    if (map && map.drawControl && map.drawControl._toolbars.edit) {
+                        map.drawControl._toolbars.edit._modes.remove.handler._clearAll();
+                    }
+                }, 100);
+                {% endmacro %}
+            """)
+        m.add_child(ClearDrawJS())
 
     output = st_folium(
         m,
