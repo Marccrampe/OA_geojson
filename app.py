@@ -49,10 +49,11 @@ with tabs[0]:
         st.markdown("""
             <button id="clear-map-btn" style="padding: 0.5em 1em; font-size: 16px;">🗑️ Clear Map</button>
             <script>
-            const clearBtn = document.getElementById("clear-map-btn");
-            clearBtn.onclick = () => {
-                const removeBtn = document.querySelector('.leaflet-draw-edit-remove');
-                if (removeBtn) removeBtn.click();
+            document.getElementById("clear-map-btn").onclick = () => {
+                setTimeout(() => {
+                    let removeBtn = document.querySelector(".leaflet-draw-toolbar a.leaflet-draw-edit-remove");
+                    if (removeBtn) removeBtn.click();
+                }, 500);
             };
             </script>
         """, unsafe_allow_html=True)
@@ -112,7 +113,6 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    # Inject JS for geolocate
     if geoloc_trigger:
         class ClickLocateControlJS(MacroElement):
             _template = Template("""
@@ -120,21 +120,25 @@ with tabs[0]:
                 setTimeout(function() {
                     let locateBtn = document.querySelector('.leaflet-control-locate a');
                     if (locateBtn) locateBtn.click();
-                }, 300);
+                }, 500);
                 {% endmacro %}
             """)
         m.add_child(ClickLocateControlJS())
 
-    # Fix for drawing after search
     class FixDrawAfterSearch(MacroElement):
         _template = Template("""
             {% macro script(this, kwargs) %}
-            document.querySelectorAll('.leaflet-control-geocoder .leaflet-control-geocoder-form input')[0].addEventListener('blur', function() {
-                setTimeout(function() {
-                    let toolbar = document.querySelector('.leaflet-draw-toolbar-top a');
-                    if (toolbar) toolbar.click();
-                }, 500);
-            });
+            setTimeout(function() {
+                const forms = document.querySelectorAll('.leaflet-control-geocoder-form input');
+                forms.forEach(f => {
+                    f.addEventListener('blur', () => {
+                        setTimeout(() => {
+                            const drawBtn = document.querySelector('.leaflet-draw-draw-polygon');
+                            if (drawBtn) drawBtn.click();
+                        }, 300);
+                    });
+                });
+            }, 1000);
             {% endmacro %}
         """)
     m.add_child(FixDrawAfterSearch())
