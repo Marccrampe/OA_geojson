@@ -144,7 +144,7 @@ with tabs[0]:
         height=700,
         width=1200,
         returned_objects=["last_active_drawing", "all_drawings"],
-        key=f"map_draw_{st.session_state.clear_map_trigger}_{st.session_state.geoloc_click}"
+        key="map_draw_main"
     )
 
     if output and output.get("last_active_drawing"):
