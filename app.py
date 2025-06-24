@@ -7,7 +7,7 @@ import geopandas as gpd
 import pandas as pd
 import io
 import json
-from shapely.geometry import shape
+from shapely.geometry import shape, Polygon
 from shapely.validation import explain_validity
 from geopy.geocoders import Nominatim
 import base64
@@ -83,7 +83,7 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.4
+    opacity=0.2
 ).add_to(m)
 
 if not clear_map:
@@ -106,18 +106,7 @@ LocateControl().add_to(m)
 
 output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
 
-# Zoom on drawn geometry if present
-if output and output.get("last_active_drawing"):
-    try:
-        feature = output["last_active_drawing"]
-        geom = shape(feature["geometry"])
-        bounds = geom.bounds  # (minx, miny, maxx, maxy)
-        m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-    except Exception as e:
-        st.warning("Could not zoom to geometry.")
-
 # ---------- Geometry validation ----------
-
 st.subheader("✅ Geometry Validation")
 
 file_name_input = st.text_input("Name your file (without extension):", value="your_area")
@@ -160,15 +149,23 @@ if uploaded_file:
     try:
         gdf = None
         if uploaded_file.name.endswith(".xlsx"):
-            df = pd.read_excel(uploaded_file)
+            df = pd.read_excel(uploaded_file, engine="openpyxl")
             if {'latitude', 'longitude'}.issubset(df.columns):
-                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
+                coords = list(zip(df['longitude'], df['latitude']))
+                if coords[0] != coords[-1]:
+                    coords.append(coords[0])
+                polygon = Polygon(coords)
+                gdf = gpd.GeoDataFrame(index=[0], geometry=[polygon], crs='EPSG:4326')
             else:
                 st.warning("Excel must have 'latitude' and 'longitude' columns.")
         elif uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
             if {'latitude', 'longitude'}.issubset(df.columns):
-                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
+                coords = list(zip(df['longitude'], df['latitude']))
+                if coords[0] != coords[-1]:
+                    coords.append(coords[0])
+                polygon = Polygon(coords)
+                gdf = gpd.GeoDataFrame(index=[0], geometry=[polygon], crs='EPSG:4326')
             else:
                 st.warning("CSV must have 'latitude' and 'longitude' columns.")
         elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
@@ -177,9 +174,15 @@ if uploaded_file:
         if gdf is not None:
             st.success("File loaded successfully.")
             geojson_str = gdf.to_json(indent=2)
-            st_data = gdf.to_crs(epsg=4326)
-            m = folium.Map(location=st_data.geometry.iloc[0].centroid.coords[0][::-1], zoom_start=12, control_scale=True, tiles=None)
-            folium.GeoJson(data=geojson_str, name="Uploaded GeoJSON").add_to(m)
+            st.download_button(
+                "📥 Download Cleaned GeoJSON",
+                data=geojson_str,
+                file_name=f"{file_name_input}_converted.geojson",
+                mime="application/geo+json",
+                use_container_width=True
+            )
+            m = folium.Map(location=[gdf.geometry[0].centroid.y, gdf.geometry[0].centroid.x],
+                           zoom_start=14, control_scale=True, tiles=None)
             folium.raster_layers.TileLayer(
                 tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
                 name='Google Satellite',
@@ -196,15 +199,9 @@ if uploaded_file:
                 control=True,
                 opacity=0.4
             ).add_to(m)
+            folium.GeoJson(data=geojson_str, name="Uploaded Geometry").add_to(m)
             LayerControl().add_to(m)
             st_folium(m, height=650, width=1100)
-            st.download_button(
-                "📥 Download Cleaned GeoJSON",
-                data=geojson_str,
-                file_name=f"{file_name_input}_converted.geojson",
-                mime="application/geo+json",
-                use_container_width=True
-            )
             with st.expander("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
     except Exception as e:
