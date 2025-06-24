@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
-from folium.plugins import Draw, LocateControl
+from folium.plugins import Draw, LocateControl, Geocoder
 from folium import LayerControl
 import geopandas as gpd
 import pandas as pd
@@ -60,8 +60,8 @@ st.subheader("🗺️ Draw your area")
 m = folium.Map(
     location=[lat, lon],
     zoom_start=zoom,
-    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    attr='Google Satellite'
+    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attr='© OpenStreetMap contributors'
 )
 Draw(
     export=True,
@@ -75,6 +75,7 @@ Draw(
         'circlemarker': False
     }
 ).add_to(m)
+Geocoder().add_to(m)
 LayerControl().add_to(m)
 LocateControl().add_to(m)
 output = st_folium(m, height=400, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
@@ -124,11 +125,26 @@ if uploaded_file:
     try:
         if uploaded_file.name.endswith(".xlsx"):
             df = pd.read_excel(uploaded_file)
+            if {'latitude', 'longitude'}.issubset(df.columns):
+                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
+            else:
+                st.warning("Excel must have 'latitude' and 'longitude' columns.")
+                gdf = None
         elif uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
+            if {'latitude', 'longitude'}.issubset(df.columns):
+                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
+            else:
+                st.warning("CSV must have 'latitude' and 'longitude' columns.")
+                gdf = None
         elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
             gdf = gpd.read_file(uploaded_file)
-            st.success("GeoJSON file loaded.")
+        else:
+            st.warning("Unsupported file format.")
+            gdf = None
+
+        if gdf is not None:
+            st.success("File loaded successfully.")
             st.map(gdf)
             geojson_str = gdf.to_json(indent=2)
             st.download_button(
@@ -140,25 +156,5 @@ if uploaded_file:
             )
             with st.expander("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
-        else:
-            st.warning("Unsupported file format.")
-
-        if 'df' in locals():
-            if {'latitude', 'longitude'}.issubset(df.columns):
-                gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
-                st.map(gdf)
-                geojson_str = gdf.to_json(indent=2)
-                st.success("Coordinates loaded and converted to GeoJSON.")
-                st.download_button(
-                    "📥 Download GeoJSON",
-                    data=geojson_str,
-                    file_name=f"{file_name_input}_converted.geojson",
-                    mime="application/geo+json",
-                    use_container_width=True
-                )
-                with st.expander("📄 View GeoJSON content"):
-                    geojson_placeholder.code(geojson_str, language='json')
-            else:
-                st.warning("Excel or CSV must have 'latitude' and 'longitude' columns.")
     except Exception as e:
         st.error(f"Error processing the file: {e}")
