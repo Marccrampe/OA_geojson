@@ -86,6 +86,9 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
+    if clear_map:
+        st.session_state.drawings = []
+
     draw_plugin = Draw(
         export=True,
         filename='drawn.geojson',
@@ -96,7 +99,9 @@ with tabs[0]:
             'circle': False,
             'marker': False,
             'circlemarker': False
-        }
+        },
+        edit_options={'edit': True},
+        delete_options={'delete': True}
     )
     draw_plugin.add_to(m)
 
@@ -105,10 +110,6 @@ with tabs[0]:
     LocateControl().add_to(m)
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
-
-    if clear_map:
-        st.session_state.drawings = []
-        output = {"all_drawings": []}  # clear drawings from map
 
     if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
