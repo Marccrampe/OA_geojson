@@ -105,6 +105,27 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
+# ---------- Top Banner ----------
+st.markdown(f"""
+    <div style='
+        width: 100%;
+        background-color: white;
+        padding: 1.2rem 2rem;
+        margin-bottom: 1rem;
+        color: #4A1CFC;
+        font-size: 22px;
+        font-weight: 700;
+        text-align: left;
+        border-radius: 0 0 12px 12px;
+        display: flex;
+        align-items: center;
+    '>
+        <img src='data:image/png;base64,{logo_base64}' style='height: 40px; margin-right: 15px;'>
+        OpenAtlas GeoJSON Tool
+    </div>
+""", unsafe_allow_html=True)
+
 # ---------- Header ----------
 if logo_base64:
     st.markdown(f"""
