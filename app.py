@@ -60,9 +60,20 @@ st.subheader("🗺️ Draw your area")
 m = folium.Map(
     location=[lat, lon],
     zoom_start=zoom,
-    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attr='© OpenStreetMap contributors'
+    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    attr='Google Satellite'
 )
+
+# Add transparent OSM label layer
+folium.raster_layers.TileLayer(
+    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    name='Labels (OSM)',
+    attr='© OpenStreetMap contributors',
+    overlay=True,
+    control=True,
+    opacity=0.7
+).add_to(m)
+
 Draw(
     export=True,
     filename='drawn.geojson',
