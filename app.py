@@ -173,13 +173,14 @@ with tabs[1]:
                 st.success("File loaded successfully.")
                 geojson_str = gdf.to_json(indent=2)
 
-                bounds = gdf.total_bounds  # (minx, miny, maxx, maxy)
+                bounds = gdf.total_bounds
                 center = [
                     (bounds[1] + bounds[3]) / 2,
                     (bounds[0] + bounds[2]) / 2
                 ]
+                zoom = 16 if (bounds[2] - bounds[0] < 0.1 and bounds[3] - bounds[1] < 0.1) else 12
 
-                m2 = folium.Map(location=center, zoom_start=14, control_scale=True, tiles=None)
+                m2 = folium.Map(location=center, zoom_start=zoom, control_scale=True, tiles=None)
                 folium.raster_layers.TileLayer(
                     tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
                     name='Google Satellite',
@@ -202,7 +203,6 @@ with tabs[1]:
 
                 Draw(
                     export=True,
-                    edit_options={"featureGroup": "Uploaded Polygon"},
                     draw_options={
                         'polygon': True,
                         'rectangle': True,
@@ -211,7 +211,7 @@ with tabs[1]:
                         'marker': False,
                         'circlemarker': False
                     },
-                    edit=True
+                    edit_options={'edit': True, 'remove': True}
                 ).add_to(m2)
 
                 LayerControl().add_to(m2)
