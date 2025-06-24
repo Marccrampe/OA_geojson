@@ -91,26 +91,40 @@ with tabs[0]:
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
-    locate = LocateControl(auto_start=False).add_to(m)
+    LocateControl(auto_start=False).add_to(m)
+
+    class LocateButton(MacroElement):
+        def __init__(self):
+            super().__init__()
+            self._template = Template("""
+                {% macro script(this, kwargs) %}
+                function triggerLocate() {
+                    var locateControl = document.querySelector('.leaflet-control-locate .leaflet-bar-part');
+                    if (locateControl) locateControl.click();
+                }
+                setTimeout(triggerLocate, 1000);
+                {% endmacro %}
+            """)
+
+    class ClearDrawings(MacroElement):
+        def __init__(self):
+            super().__init__()
+            self._template = Template("""
+                {% macro script(this, kwargs) %}
+                function triggerClear() {
+                    var clearButton = document.querySelector('a[title="Clear all layers"]');
+                    if (clearButton) clearButton.click();
+                }
+                setTimeout(triggerClear, 1000);
+                {% endmacro %}
+            """)
 
     if locate_me:
-        js = """
-        function locate() {
-            document.querySelectorAll('.leaflet-control-locate .leaflet-bar-part')[0].click();
-        }
-        locate();
-        """
-        m.get_root().script.add_child(folium.Element(f"<script>{js}</script>"))
+        m.get_root().add_child(LocateButton())
 
     if clear_map:
         st.session_state.drawings = []
-        js_clear = """
-        function clearDrawings() {
-            document.querySelectorAll('.leaflet-draw-actions a[title="Clear all layers"]')[0].click();
-        }
-        clearDrawings();
-        """
-        m.get_root().script.add_child(folium.Element(f"<script>{js_clear}</script>"))
+        m.get_root().add_child(ClearDrawings())
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
