@@ -225,7 +225,7 @@ with tabs[1]:
                         folium.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', name='Labels (OSM)', attr='© OpenStreetMap contributors', opacity=0.3).add_to(map_obj)
                         if color == "red":
                             folium.GeoJson(gdf, name="Original", style_function=lambda x: {"color": "red"}).add_to(map_obj)
-                            st_folium(map_obj, height=500, width=550)
+                            st_folium(map_obj, height=500, width=500)
                         else:
                             Draw(
                                 export=True,
