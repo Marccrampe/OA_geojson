@@ -25,9 +25,7 @@ def get_base64_of_bin_file(bin_file_path):
 logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 
 # ---------- Page config ----------
-if "do_rerun" in st.session_state and st.session_state.do_rerun:
-    st.session_state.do_rerun = False
-    st.rerun()
+
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
 
 # ---------- Header ----------
@@ -61,7 +59,6 @@ with tabs[0]:
 
     if clear_map:
         st.session_state.drawings = []
-        st.session_state.do_rerun = True
 
     st.subheader("🗺️ Draw your area")
 
@@ -143,8 +140,8 @@ with tabs[0]:
 
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
-        # Force refresh by re-rendering the map without previous drawings
-        st.session_state.do_rerun = True
+        # Replace previous drawing only
+        # (no rerun to preserve current map state)
 
     st.subheader("✅ Geometry Validation")
 
