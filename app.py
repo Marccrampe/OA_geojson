@@ -173,13 +173,36 @@ with tabs[1]:
                 st.success("File loaded successfully.")
                 geojson_str = gdf.to_json(indent=2)
 
-                # Map
-                center = gdf.geometry[0].centroid.coords[0][::-1]
-                m2 = folium.Map(location=center, zoom_start=12, control_scale=True)
-                folium.GeoJson(gdf).add_to(m2)
+                bounds = gdf.total_bounds  # (minx, miny, maxx, maxy)
+                center = [
+                    (bounds[1] + bounds[3]) / 2,
+                    (bounds[0] + bounds[2]) / 2
+                ]
+
+                m2 = folium.Map(location=center, zoom_start=14, control_scale=True, tiles=None)
+                folium.raster_layers.TileLayer(
+                    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+                    name='Google Satellite',
+                    attr='Google',
+                    overlay=False,
+                    control=True,
+                    opacity=1.0
+                ).add_to(m2)
+
+                folium.raster_layers.TileLayer(
+                    tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    name='Labels (OSM)',
+                    attr='© OpenStreetMap contributors',
+                    overlay=True,
+                    control=True,
+                    opacity=0.4
+                ).add_to(m2)
+
+                folium.GeoJson(gdf, name="Uploaded Polygon").add_to(m2)
+
                 Draw(
                     export=True,
-                    filename='edited.geojson',
+                    edit_options={"featureGroup": "Uploaded Polygon"},
                     draw_options={
                         'polygon': True,
                         'rectangle': True,
@@ -187,9 +210,14 @@ with tabs[1]:
                         'circle': False,
                         'marker': False,
                         'circlemarker': False
-                    }
+                    },
+                    edit=True
                 ).add_to(m2)
-                st_folium(m2, height=600, width=1100)
+
+                LayerControl().add_to(m2)
+                LocateControl().add_to(m2)
+
+                st_folium(m2, height=650, width=1100)
 
                 st.download_button(
                     "📥 Download Cleaned GeoJSON",
