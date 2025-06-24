@@ -92,21 +92,20 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    if not clear_map:
-        draw_plugin = Draw(
-            export=True,
-            filename='drawn.geojson',
-            draw_options={
-                'polygon': True,
-                'rectangle': True,
-                'polyline': False,
-                'circle': False,
-                'marker': False,
-                'circlemarker': False
-            },
-            edit_options={'edit': True}
-        )
-        draw_plugin.add_to(m)
+    draw_plugin = Draw(
+        export=True,
+        filename='drawn.geojson',
+        draw_options={
+            'polygon': True,
+            'rectangle': True,
+            'polyline': False,
+            'circle': False,
+            'marker': False,
+            'circlemarker': False
+        },
+        edit_options={'edit': True}
+    )
+    draw_plugin.add_to(m)
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
@@ -120,8 +119,18 @@ with tabs[0]:
         key=f"map_draw_{st.session_state.clear_map_trigger}"
     )
 
-    if output and output.get("last_active_drawing") and not clear_map:
+    if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
+        # Update center and zoom based on latest drawing
+        try:
+            geom = shape(output["last_active_drawing"]["geometry"])
+            bounds = geom.bounds
+            lat_center = (bounds[1] + bounds[3]) / 2
+            lon_center = (bounds[0] + bounds[2]) / 2
+            st.session_state.map_center = [lat_center, lon_center]
+            st.session_state.zoom = 14
+        except:
+            pass
 
     st.subheader("✅ Geometry Validation")
 
