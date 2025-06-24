@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
-from folium.plugins import Draw, LocateControl, Search
+from folium.plugins import Draw, LocateControl
 from folium import LayerControl
 import geopandas as gpd
 import pandas as pd
@@ -42,7 +42,7 @@ else:
 # ---------- Sidebar search ----------
 st.sidebar.subheader("📍 Locate your area")
 geocode_input = st.sidebar.text_input("Search a place (optional):")
-lat, lon = 20, 0  # Default to center of the world
+lat, lon = 20, 0
 zoom = 2
 
 if geocode_input:
@@ -54,19 +54,19 @@ if geocode_input:
     else:
         st.sidebar.warning("Place not found.")
 
-# ---------- Draw on map ----------
+# ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
 
-col1, col2 = st.columns([2, 1])
+map_col, preview_col = st.columns([2, 1], gap="medium")
+geojson_str = ""
 
-with col1:
+with map_col:
     m = folium.Map(
         location=[lat, lon],
         zoom_start=zoom,
         tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
         attr='Google Satellite'
     )
-
     Draw(
         export=True,
         filename='drawn.geojson',
@@ -79,17 +79,16 @@ with col1:
             'circlemarker': False
         }
     ).add_to(m)
-
     LayerControl().add_to(m)
     LocateControl().add_to(m)
+    output = st_folium(m, height=400, width=800, returned_objects=["last_active_drawing", "all_drawings"])
 
-    output = st_folium(m, height=500, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
-
-with col2:
+with preview_col:
     st.markdown("### ✏️ GeoJSON Preview")
-    geojson_str = ""
+    geojson_placeholder = st.empty()
 
 # ---------- Geometry validation ----------
+st.markdown("---")
 st.subheader("✅ Geometry Validation")
 
 file_name_input = st.text_input("Name your file (without extension):", value="your_area")
@@ -104,8 +103,7 @@ if output and output.get("last_active_drawing"):
         if geom.is_valid:
             st.success("Geometry is valid!")
             geojson_str = json.dumps(geojson_obj, indent=2)
-            with col2:
-                st.code(geojson_str, language='json')
+            geojson_placeholder.code(geojson_str, language='json')
             st.download_button(
                 "📥 Download GeoJSON",
                 data=geojson_str,
@@ -138,7 +136,7 @@ if uploaded_file:
             st.success("GeoJSON file loaded.")
             st.map(gdf)
             geojson_str = gdf.to_json(indent=2)
-            st.code(geojson_str, language='json')
+            geojson_placeholder.code(geojson_str, language='json')
             st.download_button(
                 "📥 Download Cleaned GeoJSON",
                 data=geojson_str,
@@ -154,7 +152,7 @@ if uploaded_file:
                 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
                 st.map(gdf)
                 geojson_str = gdf.to_json(indent=2)
-                st.code(geojson_str, language='json')
+                geojson_placeholder.code(geojson_str, language='json')
                 st.success("Coordinates loaded and converted to GeoJSON.")
                 st.download_button(
                     "📥 Download GeoJSON",
