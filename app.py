@@ -100,8 +100,7 @@ with tabs[0]:
             'marker': False,
             'circlemarker': False
         },
-        edit_options={'edit': True},
-        delete_options={'delete': True}
+        edit_options={'edit': True}
     )
     draw_plugin.add_to(m)
 
