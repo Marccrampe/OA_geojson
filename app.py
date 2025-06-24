@@ -22,7 +22,7 @@ def get_base64_of_bin_file(bin_file_path):
     else:
         return None
 
-logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
+logo_base64 = get_base64_of_bin_file("open-atlas-logo.png")
 
 # ---------- Page config ----------
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
@@ -57,41 +57,35 @@ if geocode_input:
 # ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
 
-map_col, preview_col = st.columns([2, 1], gap="medium")
-geojson_str = ""
-
-with map_col:
-    m = folium.Map(
-        location=[lat, lon],
-        zoom_start=zoom,
-        tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-        attr='Google Satellite'
-    )
-    Draw(
-        export=True,
-        filename='drawn.geojson',
-        draw_options={
-            'polygon': True,
-            'rectangle': True,
-            'polyline': False,
-            'circle': False,
-            'marker': False,
-            'circlemarker': False
-        }
-    ).add_to(m)
-    LayerControl().add_to(m)
-    LocateControl().add_to(m)
-    output = st_folium(m, height=400, width=800, returned_objects=["last_active_drawing", "all_drawings"])
-
-with preview_col:
-    st.markdown("### ✏️ GeoJSON Preview")
-    geojson_placeholder = st.empty()
+m = folium.Map(
+    location=[lat, lon],
+    zoom_start=zoom,
+    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    attr='Google Satellite'
+)
+Draw(
+    export=True,
+    filename='drawn.geojson',
+    draw_options={
+        'polygon': True,
+        'rectangle': True,
+        'polyline': False,
+        'circle': False,
+        'marker': False,
+        'circlemarker': False
+    }
+).add_to(m)
+LayerControl().add_to(m)
+LocateControl().add_to(m)
+output = st_folium(m, height=400, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
 
 # ---------- Geometry validation ----------
-st.markdown("---")
 st.subheader("✅ Geometry Validation")
 
 file_name_input = st.text_input("Name your file (without extension):", value="your_area")
+geojson_str = ""
+
+geojson_placeholder = st.empty()
 
 if output and output.get("last_active_drawing"):
     try:
@@ -103,7 +97,6 @@ if output and output.get("last_active_drawing"):
         if geom.is_valid:
             st.success("Geometry is valid!")
             geojson_str = json.dumps(geojson_obj, indent=2)
-            geojson_placeholder.code(geojson_str, language='json')
             st.download_button(
                 "📥 Download GeoJSON",
                 data=geojson_str,
@@ -112,6 +105,8 @@ if output and output.get("last_active_drawing"):
                 use_container_width=True,
                 type="primary"
             )
+            with st.expander("📄 View GeoJSON content"):
+                geojson_placeholder.code(geojson_str, language='json')
         else:
             st.error(f"Invalid geometry: {explain_validity(geom)}")
     except Exception as e:
@@ -136,7 +131,6 @@ if uploaded_file:
             st.success("GeoJSON file loaded.")
             st.map(gdf)
             geojson_str = gdf.to_json(indent=2)
-            geojson_placeholder.code(geojson_str, language='json')
             st.download_button(
                 "📥 Download Cleaned GeoJSON",
                 data=geojson_str,
@@ -144,6 +138,8 @@ if uploaded_file:
                 mime="application/geo+json",
                 use_container_width=True
             )
+            with st.expander("📄 View GeoJSON content"):
+                geojson_placeholder.code(geojson_str, language='json')
         else:
             st.warning("Unsupported file format.")
 
@@ -152,7 +148,6 @@ if uploaded_file:
                 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
                 st.map(gdf)
                 geojson_str = gdf.to_json(indent=2)
-                geojson_placeholder.code(geojson_str, language='json')
                 st.success("Coordinates loaded and converted to GeoJSON.")
                 st.download_button(
                     "📥 Download GeoJSON",
@@ -161,6 +156,8 @@ if uploaded_file:
                     mime="application/geo+json",
                     use_container_width=True
                 )
+                with st.expander("📄 View GeoJSON content"):
+                    geojson_placeholder.code(geojson_str, language='json')
             else:
                 st.warning("Excel or CSV must have 'latitude' and 'longitude' columns.")
     except Exception as e:
