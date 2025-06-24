@@ -1,5 +1,3 @@
-# Modification pour supprimer tous les dessins via JS quand on clique sur Clear Map
-
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
@@ -42,26 +40,20 @@ else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Tabs ----------
-tabs = st.tabs(["🖊️ Draw Tool", "📄 Upload from File"])
+tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
 
+# ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     with col1:
         clear_map = st.button("🗑️ Clear Map")
     with col2:
-        locate_me = st.button("📍 Center on My Location")
+        geoloc_trigger = st.button("📍 Center on My Location")
 
     if "map_center" not in st.session_state:
         st.session_state.map_center = [20, 0]
         st.session_state.zoom = 2
     if "drawings" not in st.session_state:
-        st.session_state.drawings = []
-
-    if locate_me:
-        st.session_state.map_center = [0, 0]
-        st.session_state.zoom = 12
-
-    if clear_map:
         st.session_state.drawings = []
 
     st.subheader("🗺️ Draw your area")
@@ -91,7 +83,7 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    draw_control = Draw(
+    draw_plugin = Draw(
         export=True,
         filename='drawn.geojson',
         draw_options={
@@ -101,32 +93,50 @@ with tabs[0]:
             'circle': False,
             'marker': False,
             'circlemarker': False
-        }
+        },
+        edit_options={'edit': True, 'remove': True}
     )
-    draw_control.add_to(m)
+    draw_plugin.add_to(m)
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    # JS to remove drawings directly via Leaflet.pm
+    # Inject JS to simulate click on clear all (no refresh)
     if clear_map:
-        js_clear_drawn = """
-        <script>
-            setTimeout(() => {
-                if (window.map && map.pm) {
-                    map.pm.removeAllLayers();
-                }
-            }, 500);
-        </script>
-        """
-        macro = MacroElement()
-        macro._template = Template(js_clear_drawn)
-        m.get_root().add_child(macro)
+        class ClearDrawJS(MacroElement):
+            _template = Template("""
+                {% macro script(this, kwargs) %}
+                setTimeout(function() {
+                    const toolbar = document.querySelector('.leaflet-draw-actions a[title="Delete layers"]');
+                    if (toolbar) toolbar.click();
+                }, 300);
+                {% endmacro %}
+            """)
+        m.add_child(ClearDrawJS())
+        st.session_state.drawings = []
 
-    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
+    # Inject JS to simulate click on LocateControl
+    if geoloc_trigger:
+        class ClickLocateControlJS(MacroElement):
+            _template = Template("""
+                {% macro script(this, kwargs) %}
+                setTimeout(function() {
+                    let locateBtn = document.querySelector('.leaflet-control-locate a');
+                    if (locateBtn) locateBtn.click();
+                }, 300);
+                {% endmacro %}
+            """)
+        m.add_child(ClickLocateControlJS())
 
-    if output and output.get("last_active_drawing") and not clear_map:
+    output = st_folium(
+        m,
+        height=700,
+        width=1200,
+        returned_objects=["last_active_drawing", "all_drawings"]
+    )
+
+    if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
     st.subheader("✅ Geometry Validation")
@@ -146,7 +156,7 @@ with tabs[0]:
                 st.success("Geometry is valid!")
                 geojson_str = json.dumps(geojson_obj, indent=2)
                 st.download_button(
-                    "📅 Download GeoJSON",
+                    "📥 Download GeoJSON",
                     data=geojson_str,
                     file_name=f"{file_name_input}.geojson",
                     mime="application/geo+json",
