@@ -81,7 +81,7 @@ st.markdown("""
             color: #4A1CFC;
         }
 
-        .css-1cpxqw2, .css-1d391kg {
+        .css-1cpxqw2, .css-1d391kg, .stColumn {
             background-color: #1e1e1e;
             border-radius: 12px;
             padding: 1rem;
@@ -91,52 +91,46 @@ st.markdown("""
             font-weight: 600;
         }
 
-        /* Blue top banner */
+        /* White top banner */
         .top-banner {
             width: 100%;
-            background-color: #4A1CFC;
-            padding: 1rem 2rem;
-            margin-bottom: 1rem;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
+            background-color: white;
+            padding: 1.2rem 2rem;
+            margin-bottom: 1.5rem;
+            color: #4A1CFC;
+            font-size: 22px;
+            font-weight: 700;
             text-align: left;
             border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
     </style>
 """, unsafe_allow_html=True)
 
 # ---------- Top Banner ----------
 st.markdown(f"""
-    <div style='
-        width: 100%;
-        background-color: white;
-        padding: 1.2rem 2rem;
-        margin-bottom: 1rem;
-        color: #4A1CFC;
-        font-size: 22px;
-        font-weight: 700;
-        text-align: left;
-        border-radius: 0 0 12px 12px;
-        display: flex;
-        align-items: center;
-    '>
+    <div class='top-banner'>
         <img src='data:image/png;base64,{logo_base64}' style='height: 40px; margin-right: 15px;'>
-        OpenAtlas GeoJSON Tool
+        OpenAtlas GeoJSON Tool – Define, Edit and Validate Land Parcels
     </div>
 """, unsafe_allow_html=True)
 
 # ---------- Header ----------
 if logo_base64:
     st.markdown(f"""
-        <div style='display: flex; align-items: center;'>
-            <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-right: 20px;'>
-            <h2 style='margin: 0;'>Draw or Upload Your Land Area (EUDR-compliant)</h2>
+        <div style='background-color: #1e1e1e; padding: 1.5rem; border-radius: 12px;'>
+            <h2 style='margin-top: 0;'>What is the OpenAtlas GeoJSON Tool?</h2>
+            <p style='font-size: 16px; line-height: 1.6;'>
+                The OpenAtlas GeoJSON Tool allows users to easily define, draw, or upload land parcels in a structured GeoJSON format.
+                This interface is part of the OpenAtlas VANTAGE suite and is specifically designed to support EUDR compliance workflows.
+                Whether you're mapping agricultural plots, forest boundaries, or land concessions, this tool ensures your geometries are validated and exportable in a standard format.
+            </p>
         </div>
-        <p>Draw your territory, or upload an Excel/GeoJSON file, and get a validated GeoJSON file.</p>
     """, unsafe_allow_html=True)
 else:
-    st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
+    st.markdown("## Define, Edit and Validate Land Areas for EUDR Compliance")
 
 # ---------- Tabs ----------
 tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
