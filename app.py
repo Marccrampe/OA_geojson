@@ -81,7 +81,7 @@ folium.raster_layers.TileLayer(
     attr='© OpenStreetMap contributors',
     overlay=True,
     control=True,
-    opacity=0.1
+    opacity=0.05
 ).add_to(m)
 
 # Add transparent OSM label layer
