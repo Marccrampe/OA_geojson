@@ -18,7 +18,7 @@ def get_base64_of_bin_file(bin_file_path):
         data = f.read()
     return base64.b64encode(data).decode()
 
-logo_base64 = get_base64_of_bin_file("open-atlas-logo.png")
+logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 
 # ---------- Page config ----------
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
@@ -50,48 +50,69 @@ if geocode_input:
 # ---------- Draw on map ----------
 st.subheader("🗺️ Draw your area")
 
-m = folium.Map(
-    location=[lat, lon],
-    zoom_start=zoom,
-    tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    attr='Google Satellite'
-)
+col1, col2 = st.columns([2, 1])
 
-Draw(
-    export=True,
-    filename='drawn.geojson',
-    draw_options={
-        'polygon': True,
-        'rectangle': True,
-        'polyline': False,
-        'circle': False,
-        'marker': False,
-        'circlemarker': False
-    }
-).add_to(m)
+with col1:
+    m = folium.Map(
+        location=[lat, lon],
+        zoom_start=zoom,
+        tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        attr='Google Satellite'
+    )
 
-LayerControl().add_to(m)
+    Draw(
+        export=True,
+        filename='drawn.geojson',
+        draw_options={
+            'polygon': True,
+            'rectangle': True,
+            'polyline': False,
+            'circle': False,
+            'marker': False,
+            'circlemarker': False
+        }
+    ).add_to(m)
 
-output = st_folium(m, height=600, width=1000, returned_objects=["all_drawings"])
+    LayerControl().add_to(m)
+
+    output = st_folium(m, height=600, width=1000, returned_objects=["last_active_drawing", "all_drawings"])
 
 # ---------- Geometry validation ----------
 st.markdown("---")
 st.subheader("✅ Geometry Validation")
 
-if output and output.get("all_drawings"):
-    features = output["all_drawings"]
+file_name_input = st.text_input("Name your file (without extension):", value="your_area")
+geojson_str = ""
+
+if output and output.get("last_active_drawing"):
     try:
-        geom = shape(features["features"][0]["geometry"])
+        geojson_obj = {
+            "type": "FeatureCollection",
+            "features": [output["last_active_drawing"]]
+        }
+        geom = shape(output["last_active_drawing"]["geometry"])
         if geom.is_valid:
             st.success("Geometry is valid!")
-            geojson_str = json.dumps(features)
-            st.download_button("Download GeoJSON", data=geojson_str, file_name="your_area.geojson", mime="application/geo+json")
+            geojson_str = json.dumps(geojson_obj, indent=2)
+            st.download_button(
+                "📥 Download GeoJSON",
+                data=geojson_str,
+                file_name=f"{file_name_input}.geojson",
+                mime="application/geo+json",
+                use_container_width=True,
+                type="primary"
+            )
         else:
             st.error(f"Invalid geometry: {explain_validity(geom)}")
     except Exception as e:
         st.error(f"Could not parse geometry: {e}")
 else:
     st.info("Draw a polygon or rectangle above to enable validation.")
+
+with col2:
+    st.markdown("### ✏️ GeoJSON Preview")
+    if geojson_str:
+        st.code(geojson_str, language='json')
 
 # ---------- File upload ----------
 st.markdown("---")
@@ -107,10 +128,17 @@ if uploaded_file:
             df = pd.read_csv(uploaded_file)
         elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
             gdf = gpd.read_file(uploaded_file)
+            st.success("GeoJSON file loaded.")
             st.map(gdf)
-            st.success("GeoJSON file loaded and displayed.")
-            geojson_str = gdf.to_json()
-            st.download_button("Download Cleaned GeoJSON", data=geojson_str, file_name="converted.geojson", mime="application/geo+json")
+            geojson_str = gdf.to_json(indent=2)
+            st.code(geojson_str, language='json')
+            st.download_button(
+                "📥 Download Cleaned GeoJSON",
+                data=geojson_str,
+                file_name=f"{file_name_input}_converted.geojson",
+                mime="application/geo+json",
+                use_container_width=True
+            )
         else:
             st.warning("Unsupported file format.")
 
@@ -118,9 +146,16 @@ if uploaded_file:
             if {'latitude', 'longitude'}.issubset(df.columns):
                 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
                 st.map(gdf)
+                geojson_str = gdf.to_json(indent=2)
+                st.code(geojson_str, language='json')
                 st.success("Coordinates loaded and converted to GeoJSON.")
-                geojson_str = gdf.to_json()
-                st.download_button("Download GeoJSON", data=geojson_str, file_name="converted.geojson", mime="application/geo+json")
+                st.download_button(
+                    "📥 Download GeoJSON",
+                    data=geojson_str,
+                    file_name=f"{file_name_input}_converted.geojson",
+                    mime="application/geo+json",
+                    use_container_width=True
+                )
             else:
                 st.warning("Excel or CSV must have 'latitude' and 'longitude' columns.")
     except Exception as e:
