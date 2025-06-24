@@ -108,13 +108,15 @@ with tabs[0]:
             _template = Template("""
                 {% macro script(this, kwargs) %}
                 setTimeout(function() {
-                    const removeBtn = document.querySelectorAll('.leaflet-draw-edit-remove');
-                    if (removeBtn.length > 0) removeBtn[0].click();
+                    const removeBtn = document.querySelector('.leaflet-draw-edit-remove');
+                    if (removeBtn) removeBtn.click();
+                    if (window._leaflet_drawnItems) {
+                        window._leaflet_drawnItems.clearLayers();
+                    }
                 }, 300);
                 {% endmacro %}
             """)
         m.add_child(ClearDrawJS())
-        st.session_state.drawings = []
 
     # Inject JS to simulate click on LocateControl
     if geoloc_trigger:
