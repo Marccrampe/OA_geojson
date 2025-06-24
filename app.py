@@ -114,8 +114,6 @@ with tabs[0]:
                 {% endmacro %}
             """)
         m.add_child(ClearDrawJS())
-
-        # Also clear session drawings manually
         st.session_state.drawings = []
 
     # Inject JS to simulate click on LocateControl
@@ -135,8 +133,7 @@ with tabs[0]:
         m,
         height=700,
         width=1200,
-        returned_objects=["last_active_drawing", "all_drawings"],
-        key="map_draw_main"
+        returned_objects=["last_active_drawing", "all_drawings"]
     )
 
     if output and output.get("last_active_drawing"):
