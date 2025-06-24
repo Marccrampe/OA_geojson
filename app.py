@@ -147,41 +147,50 @@ with tabs[1]:
 
     uploaded_file = st.file_uploader("Upload an Excel (.xlsx), CSV (.csv), or GeoJSON file", type=["xlsx", "csv", "geojson", "json"])
 
+    file_name_input = st.text_input("Name your exported file (without extension):", value="uploaded_area")
+
     if uploaded_file:
         try:
             gdf = None
             if uploaded_file.name.endswith(".xlsx"):
                 df = pd.read_excel(uploaded_file)
-                if {'latitude', 'longitude'}.issubset(df.columns):
-                    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
-                else:
-                    coords = df[['longitude', 'latitude']].values.tolist()
-                    if len(coords) >= 3:
-                        coords.append(coords[0])
-                        poly = Polygon(coords)
-                        gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
-                    else:
-                        st.warning("Not enough points to form a polygon.")
-
+                coords = df[['longitude', 'latitude']].values.tolist()
+                if len(coords) >= 3:
+                    coords.append(coords[0])
+                    poly = Polygon(coords)
+                    gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
             elif uploaded_file.name.endswith(".csv"):
                 df = pd.read_csv(uploaded_file)
-                if {'latitude', 'longitude'}.issubset(df.columns):
-                    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs='EPSG:4326')
-                else:
-                    coords = df[['longitude', 'latitude']].values.tolist()
-                    if len(coords) >= 3:
-                        coords.append(coords[0])
-                        poly = Polygon(coords)
-                        gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
-                    else:
-                        st.warning("Not enough points to form a polygon.")
-
+                coords = df[['longitude', 'latitude']].values.tolist()
+                if len(coords) >= 3:
+                    coords.append(coords[0])
+                    poly = Polygon(coords)
+                    gdf = gpd.GeoDataFrame(index=[0], crs='EPSG:4326', geometry=[poly])
             elif uploaded_file.name.endswith(".geojson") or uploaded_file.name.endswith(".json"):
                 gdf = gpd.read_file(uploaded_file)
 
             if gdf is not None:
                 st.success("File loaded successfully.")
                 geojson_str = gdf.to_json(indent=2)
+
+                # Map
+                center = gdf.geometry[0].centroid.coords[0][::-1]
+                m2 = folium.Map(location=center, zoom_start=12, control_scale=True)
+                folium.GeoJson(gdf).add_to(m2)
+                Draw(
+                    export=True,
+                    filename='edited.geojson',
+                    draw_options={
+                        'polygon': True,
+                        'rectangle': True,
+                        'polyline': False,
+                        'circle': False,
+                        'marker': False,
+                        'circlemarker': False
+                    }
+                ).add_to(m2)
+                st_folium(m2, height=600, width=1100)
+
                 st.download_button(
                     "📥 Download Cleaned GeoJSON",
                     data=geojson_str,
@@ -189,6 +198,7 @@ with tabs[1]:
                     mime="application/geo+json",
                     use_container_width=True
                 )
+
                 with st.expander("📄 View GeoJSON content"):
                     st.code(geojson_str, language='json')
         except Exception as e:
