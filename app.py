@@ -32,13 +32,13 @@ st.markdown("""
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
         html, body, .stApp {
-            background-color: #F7F9FC;
+            background-color: #121212;
             font-family: 'Inter', sans-serif;
-            color: #1c1c1c;
+            color: white;
         }
 
         h1, h2, h3, h4 {
-            color: #1c1c1c;
+            color: white;
             font-weight: 600;
         }
 
@@ -72,6 +72,7 @@ st.markdown("""
             border: 1px solid #cccccc;
             border-radius: 8px;
             padding: 0.5em;
+            color: black;
         }
 
         .stTabs [data-baseweb="tab"] {
@@ -81,7 +82,7 @@ st.markdown("""
         }
 
         .css-1cpxqw2, .css-1d391kg {
-            background-color: #ffffff;
+            background-color: #1e1e1e;
             border-radius: 12px;
             padding: 1rem;
         }
@@ -89,9 +90,21 @@ st.markdown("""
         .stExpanderHeader {
             font-weight: 600;
         }
+
+        /* Blue top banner */
+        .top-banner {
+            width: 100%;
+            background-color: #4A1CFC;
+            padding: 1rem 2rem;
+            margin-bottom: 1rem;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: left;
+            border-radius: 0 0 12px 12px;
+        }
     </style>
 """, unsafe_allow_html=True)
-
 # ---------- Header ----------
 if logo_base64:
     st.markdown(f"""
