@@ -41,12 +41,6 @@ tabs = st.tabs(["🖊️ Draw Tool", "📄 Upload from File"])
 
 # ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        clear_map = st.button("🗑️ Clear Map")
-    with col2:
-        locate_me = st.button("📍 Center on My Location")
-
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
 
@@ -93,42 +87,64 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl(auto_start=False).add_to(m)
 
-    class LocateButton(MacroElement):
-        def __init__(self):
+    # Custom locate button
+    locate_js = Template("""
+        {% macro script(this, kwargs) %}
+        var locateBtn = L.control({position: 'topleft'});
+        locateBtn.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            div.innerHTML = '<button title="Center map on your location">📍 Center</button>';
+            div.style.backgroundColor = 'white';
+            div.style.padding = '5px';
+            div.style.cursor = 'pointer';
+            div.onclick = function(){
+                map.eachLayer(function(layer){
+                    if(layer._event === 'locationfound'){ return; }
+                    if(layer._locateOptions){
+                        layer.start();
+                    }
+                });
+            };
+            return div;
+        }
+        locateBtn.addTo({{this._parent.get_name()}});
+        {% endmacro %}
+    """)
+
+    # Custom clear button
+    clear_js = Template("""
+        {% macro script(this, kwargs) %}
+        var clearBtn = L.control({position: 'topleft'});
+        clearBtn.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            div.innerHTML = '<button title="Clear all drawings">🗑️ Clear</button>';
+            div.style.backgroundColor = 'white';
+            div.style.padding = '5px';
+            div.style.cursor = 'pointer';
+            div.onclick = function(){
+                map.eachLayer(function(layer){
+                    if(layer instanceof L.FeatureGroup){
+                        layer.clearLayers();
+                    }
+                });
+            };
+            return div;
+        }
+        clearBtn.addTo({{this._parent.get_name()}});
+        {% endmacro %}
+    """)
+
+    class CustomJSControl(MacroElement):
+        def __init__(self, template):
             super().__init__()
-            self._template = Template("""
-                {% macro script(this, kwargs) %}
-                function triggerLocate() {
-                    var locateControl = document.querySelector('.leaflet-control-locate .leaflet-bar-part');
-                    if (locateControl) locateControl.click();
-                }
-                setTimeout(triggerLocate, 1000);
-                {% endmacro %}
-            """)
+            self._template = template
 
-    class ClearDrawings(MacroElement):
-        def __init__(self):
-            super().__init__()
-            self._template = Template("""
-                {% macro script(this, kwargs) %}
-                function triggerClear() {
-                    var clearButton = document.querySelector('a[title="Clear all layers"]');
-                    if (clearButton) clearButton.click();
-                }
-                setTimeout(triggerClear, 1000);
-                {% endmacro %}
-            """)
-
-    if locate_me:
-        m.get_root().add_child(LocateButton())
-
-    if clear_map:
-        st.session_state.drawings = []
-        m.get_root().add_child(ClearDrawings())
+    m.get_root().add_child(CustomJSControl(locate_js))
+    m.get_root().add_child(CustomJSControl(clear_js))
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
-    if output and output.get("last_active_drawing") and not clear_map:
+    if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
     st.subheader("✅ Geometry Validation")
