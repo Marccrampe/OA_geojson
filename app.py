@@ -1,3 +1,5 @@
+# Modification pour supprimer tous les dessins via JS quand on clique sur Clear Map
+
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
@@ -40,26 +42,12 @@ else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Tabs ----------
-tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
+tabs = st.tabs(["🖊️ Draw Tool", "📄 Upload from File"])
 
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown("""
-            <button id="clear-map-btn" style="padding: 0.5em 1em; font-size: 16px;">🗑️ Clear Map</button>
-            <script>
-            document.getElementById("clear-map-btn").onclick = () => {
-                setTimeout(() => {
-                    let removeBtn = document.querySelector(".leaflet-draw-toolbar a.leaflet-draw-edit-remove");
-                    if (removeBtn) removeBtn.click();
-
-                    // Extra clear: simulate a full clearAll call
-                    let clearBtn = document.querySelector(".leaflet-draw-actions a[title='Clear all']");
-                    if (clearBtn) clearBtn.click();
-                }, 500);
-            };
-            </script>
-        """, unsafe_allow_html=True)
+        clear_map = st.button("🗑️ Clear Map")
     with col2:
         locate_me = st.button("📍 Center on My Location")
 
@@ -73,7 +61,7 @@ with tabs[0]:
         st.session_state.map_center = [0, 0]
         st.session_state.zoom = 12
 
-    if st.button("🔄 Refresh drawings state"):
+    if clear_map:
         st.session_state.drawings = []
 
     st.subheader("🗺️ Draw your area")
@@ -103,7 +91,7 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    Draw(
+    draw_control = Draw(
         export=True,
         filename='drawn.geojson',
         draw_options={
@@ -113,17 +101,32 @@ with tabs[0]:
             'circle': False,
             'marker': False,
             'circlemarker': False
-        },
-        edit_options={'edit': True, 'remove': True}
-    ).add_to(m)
+        }
+    )
+    draw_control.add_to(m)
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"], key="main-map")
+    # JS to remove drawings directly via Leaflet.pm
+    if clear_map:
+        js_clear_drawn = """
+        <script>
+            setTimeout(() => {
+                if (window.map && map.pm) {
+                    map.pm.removeAllLayers();
+                }
+            }, 500);
+        </script>
+        """
+        macro = MacroElement()
+        macro._template = Template(js_clear_drawn)
+        m.get_root().add_child(macro)
 
-    if output and output.get("last_active_drawing"):
+    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
+
+    if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
 
     st.subheader("✅ Geometry Validation")
@@ -143,7 +146,7 @@ with tabs[0]:
                 st.success("Geometry is valid!")
                 geojson_str = json.dumps(geojson_obj, indent=2)
                 st.download_button(
-                    "📥 Download GeoJSON",
+                    "📅 Download GeoJSON",
                     data=geojson_str,
                     file_name=f"{file_name_input}.geojson",
                     mime="application/geo+json",
