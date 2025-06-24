@@ -4,11 +4,8 @@ import folium
 from folium.plugins import Draw, LocateControl, Geocoder
 from folium import LayerControl, MacroElement
 from jinja2 import Template
-import geopandas as gpd
-import pandas as pd
-import io
 import json
-from shapely.geometry import shape, Polygon
+from shapely.geometry import shape
 from shapely.validation import explain_validity
 import base64
 import os
@@ -40,7 +37,7 @@ else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Tabs ----------
-tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
+tabs = st.tabs(["🖊️ Draw Tool", "📄 Upload from File"])
 
 # ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
@@ -48,19 +45,16 @@ with tabs[0]:
     with col1:
         clear_map = st.button("🗑️ Clear Map")
     with col2:
-        geoloc_trigger = st.button("📍 Center on My Location")
+        locate_me = st.button("📍 Center on My Location")
 
-    if "map_center" not in st.session_state:
-        st.session_state.map_center = [20, 0]
-        st.session_state.zoom = 2
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
 
     st.subheader("🗺️ Draw your area")
 
     m = folium.Map(
-        location=st.session_state.map_center,
-        zoom_start=st.session_state.zoom,
+        location=[20, 0],
+        zoom_start=2,
         control_scale=True,
         tiles=None
     )
@@ -70,8 +64,7 @@ with tabs[0]:
         name='Google Satellite',
         attr='Google',
         overlay=False,
-        control=True,
-        opacity=1.0
+        control=True
     ).add_to(m)
 
     folium.raster_layers.TileLayer(
@@ -83,7 +76,7 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    draw_plugin = Draw(
+    Draw(
         export=True,
         filename='drawn.geojson',
         draw_options={
@@ -93,56 +86,35 @@ with tabs[0]:
             'circle': False,
             'marker': False,
             'circlemarker': False
-        },
-        edit_options={'edit': True, 'remove': True}
-    )
-    draw_plugin.add_to(m)
+        }
+    ).add_to(m)
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
-    LocateControl().add_to(m)
+    locate = LocateControl(auto_start=False).add_to(m)
 
-    # Inject JS to simulate click on clear all (no refresh)
+    if locate_me:
+        js = """
+        function locate() {
+            document.querySelectorAll('.leaflet-control-locate .leaflet-bar-part')[0].click();
+        }
+        locate();
+        """
+        m.get_root().script.add_child(folium.Element(f"<script>{js}</script>"))
+
     if clear_map:
-        class ClearDrawJS(MacroElement):
-            _template = Template("""
-                {% macro script(this, kwargs) %}
-                setTimeout(function() {
-                    let removeBtn = document.querySelector('.leaflet-draw-edit-remove');
-                    if (removeBtn) removeBtn.click();
-                    let trashBtns = document.querySelectorAll('.leaflet-draw-actions a');
-                    trashBtns.forEach(btn => {
-                        if (btn.title && btn.title.toLowerCase().includes('delete')) {
-                            btn.click();
-                        }
-                    });
-                }, 300);
-                {% endmacro %}
-            """)
-        m.add_child(ClearDrawJS())
         st.session_state.drawings = []
+        js_clear = """
+        function clearDrawings() {
+            document.querySelectorAll('.leaflet-draw-actions a[title="Clear all layers"]')[0].click();
+        }
+        clearDrawings();
+        """
+        m.get_root().script.add_child(folium.Element(f"<script>{js_clear}</script>"))
 
-    # Inject JS to simulate click on LocateControl
-    if geoloc_trigger:
-        class ClickLocateControlJS(MacroElement):
-            _template = Template("""
-                {% macro script(this, kwargs) %}
-                setTimeout(function() {
-                    let locateBtn = document.querySelector('.leaflet-control-locate a');
-                    if (locateBtn) locateBtn.click();
-                }, 300);
-                {% endmacro %}
-            """)
-        m.add_child(ClickLocateControlJS())
+    output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
-    output = st_folium(
-        m,
-        height=700,
-        width=1200,
-        returned_objects=["last_active_drawing", "all_drawings"]
-    )
-
-    if output and output.get("last_active_drawing"):
+    if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
 
     st.subheader("✅ Geometry Validation")
@@ -162,7 +134,7 @@ with tabs[0]:
                 st.success("Geometry is valid!")
                 geojson_str = json.dumps(geojson_obj, indent=2)
                 st.download_button(
-                    "📥 Download GeoJSON",
+                    "📅 Download GeoJSON",
                     data=geojson_str,
                     file_name=f"{file_name_input}.geojson",
                     mime="application/geo+json",
