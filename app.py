@@ -59,10 +59,6 @@ with tabs[0]:
         st.session_state.map_center = [0, 0]
         st.session_state.zoom = 12
 
-    if clear_map:
-        st.session_state.drawings = []
-        st.rerun()
-
     st.subheader("🗺️ Draw your area")
 
     m = folium.Map(
@@ -109,6 +105,10 @@ with tabs[0]:
     LocateControl().add_to(m)
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
+
+    if clear_map:
+        st.session_state.drawings = []
+        output = {"all_drawings": []}  # clear drawings from map
 
     if output and output.get("last_active_drawing") and not clear_map:
         st.session_state.drawings = [output["last_active_drawing"]]
