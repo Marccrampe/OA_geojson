@@ -92,20 +92,21 @@ with tabs[0]:
         opacity=0.4
     ).add_to(m)
 
-    draw_plugin = Draw(
-        export=True,
-        filename='drawn.geojson',
-        draw_options={
-            'polygon': True,
-            'rectangle': True,
-            'polyline': False,
-            'circle': False,
-            'marker': False,
-            'circlemarker': False
-        },
-        edit_options={'edit': True}
-    )
-    draw_plugin.add_to(m)
+    if not clear_map:
+        draw_plugin = Draw(
+            export=True,
+            filename='drawn.geojson',
+            draw_options={
+                'polygon': True,
+                'rectangle': True,
+                'polyline': False,
+                'circle': False,
+                'marker': False,
+                'circlemarker': False
+            },
+            edit_options={'edit': True}
+        )
+        draw_plugin.add_to(m)
 
     Geocoder().add_to(m)
     LayerControl().add_to(m)
