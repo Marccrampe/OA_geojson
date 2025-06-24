@@ -119,10 +119,9 @@ with tabs[0]:
             _template = Template("""
                 {% macro script(this, kwargs) %}
                 setTimeout(function() {
-                    let map = {{this._parent.get_name()}};
                     let clearBtn = document.querySelector('.leaflet-draw-edit-remove');
                     if (clearBtn) clearBtn.click();
-                }, 100);
+                }, 300);
                 {% endmacro %}
             """)
         m.add_child(ClearDrawJS())
@@ -133,10 +132,9 @@ with tabs[0]:
             _template = Template("""
                 {% macro script(this, kwargs) %}
                 setTimeout(function() {
-                    let map = {{this._parent.get_name()}};
                     let locateBtn = document.querySelector('.leaflet-control-locate a');
                     if (locateBtn) locateBtn.click();
-                }, 100);
+                }, 300);
                 {% endmacro %}
             """)
         m.add_child(ClickLocateControlJS())
