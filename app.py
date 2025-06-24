@@ -101,20 +101,21 @@ with tabs[0]:
 
     Geocoder(add_marker=False, collapsed=True).add_to(m)
     LayerControl().add_to(m)
-    LocateControl(auto_start=False, flyTo=False, keepCurrentZoomLevel=True).add_to(m)
-
-    # -------- Trigger LocateControl button click via MacroElement JS --------
     if locate_me:
-        class TriggerLocate(MacroElement):
+        class JSLocate(MacroElement):
             _template = Template("""
             {% macro script(this, kwargs) %}
-            setTimeout(function() {
-                var locateBtn = document.querySelector('.leaflet-control-locate a');
-                if (locateBtn) locateBtn.click();
-            }, 1000);
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    const map = window.map;
+                    if (map) {
+                        map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+                    }
+                });
+            }
             {% endmacro %}
             """)
-        m.add_child(TriggerLocate())
+        m.add_child(JSLocate())
 
     output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
