@@ -46,18 +46,7 @@ tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown("""
-            <button id="clear-map-btn" style="padding: 0.5em 1em; font-size: 16px;">🗑️ Clear Map</button>
-            <script>
-            document.getElementById("clear-map-btn").onclick = () => {
-                setTimeout(() => {
-                    let removeBtn = document.querySelector(".leaflet-draw-toolbar a.leaflet-draw-edit-remove");
-                    if (removeBtn) removeBtn.click();
-                }, 500);
-            };
-            </script>
-        """, unsafe_allow_html=True)
-
+        clear_map = st.button("🗑️ Clear Map")
     with col2:
         geoloc_trigger = st.button("📍 Center on My Location")
 
@@ -113,44 +102,33 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    if geoloc_trigger:
-        class ClickLocateControlJS(MacroElement):
-            _template = Template("""
-                {% macro script(this, kwargs) %}
-                setTimeout(function() {
-                    let locateBtn = document.querySelector('.leaflet-control-locate a');
-                    if (locateBtn) locateBtn.click();
-                }, 500);
-                {% endmacro %}
-            """)
-        m.add_child(ClickLocateControlJS())
+    # Inject JS to simulate click on clear all (no refresh)
+    if clear_map:
+        st.components.v1.html("""
+        <script>
+            const btns = window.parent.document.querySelectorAll('.leaflet-draw-edit-remove');
+            btns.forEach(btn => btn.click());
+        </script>
+        """, height=0)
+        st.session_state.drawings = []
 
-    class FixDrawAfterSearch(MacroElement):
-        _template = Template("""
-            {% macro script(this, kwargs) %}
-            setTimeout(function() {
-                const forms = document.querySelectorAll('.leaflet-control-geocoder-form input');
-                forms.forEach(f => {
-                    f.addEventListener('blur', () => {
-                        setTimeout(() => {
-                            const drawBtn = document.querySelector('.leaflet-draw-draw-polygon');
-                            if (drawBtn) drawBtn.click();
-                        }, 300);
-                    });
-                });
-            }, 1000);
-            {% endmacro %}
-        """)
-    m.add_child(FixDrawAfterSearch())
+    # Inject JS to simulate click on LocateControl (no center/zoom change from backend)
+    if geoloc_trigger:
+        st.components.v1.html("""
+        <script>
+            const btn = window.parent.document.querySelector('.leaflet-control-locate a');
+            if (btn) btn.click();
+        </script>
+        """, height=0)
 
     output = st_folium(
         m,
         height=700,
         width=1200,
-        returned_objects=["last_active_drawing", "all_drawings"],
-        key="mymap"
+        returned_objects=["last_active_drawing", "all_drawings"]
     )
 
+    # Only store geometry if drawn manually
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
