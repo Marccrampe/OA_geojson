@@ -118,6 +118,7 @@ if output and output.get("last_active_drawing"):
         st.warning("Could not zoom to geometry.")
 
 # ---------- Geometry validation ----------
+
 st.subheader("✅ Geometry Validation")
 
 file_name_input = st.text_input("Name your file (without extension):", value="your_area")
@@ -134,6 +135,13 @@ if output and output.get("last_active_drawing"):
         if geom.is_valid:
             st.success("Geometry is valid!")
             geojson_str = json.dumps(geojson_obj, indent=2)
+            st.download_button(
+                "📥 Download GeoJSON",
+                data=geojson_str,
+                file_name=f"{file_name_input}.geojson",
+                mime="application/geo+json",
+                use_container_width=True
+            )
             with st.expander("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
         else:
@@ -170,14 +178,34 @@ if uploaded_file:
         if gdf is not None:
             st.success("File loaded successfully.")
             geojson_str = gdf.to_json(indent=2)
+            st_data = gdf.to_crs(epsg=4326)
+            m = folium.Map(location=st_data.geometry.iloc[0].centroid.coords[0][::-1], zoom_start=12, control_scale=True, tiles=None)
+            folium.GeoJson(data=geojson_str, name="Uploaded GeoJSON").add_to(m)
+            folium.raster_layers.TileLayer(
+                tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+                name='Google Satellite',
+                attr='Google',
+                overlay=False,
+                control=True,
+                opacity=1.0
+            ).add_to(m)
+            folium.raster_layers.TileLayer(
+                tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                name='Labels (OSM)',
+                attr='© OpenStreetMap contributors',
+                overlay=True,
+                control=True,
+                opacity=0.4
+            ).add_to(m)
+            LayerControl().add_to(m)
+            st_folium(m, height=650, width=1100)
             st.download_button(
                 "📥 Download Cleaned GeoJSON",
                 data=geojson_str,
                 file_name=f"{file_name_input}_converted.geojson",
                 mime="application/geo+json",
                 use_container_width=True
-            )
-            with st.expander("📄 View GeoJSON content"):
+            )("📄 View GeoJSON content"):
                 geojson_placeholder.code(geojson_str, language='json')
     except Exception as e:
         st.error(f"Error processing the file: {e}")
