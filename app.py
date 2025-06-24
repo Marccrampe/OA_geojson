@@ -138,15 +138,6 @@ with tabs[0]:
 
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
-        try:
-            geom = shape(output["last_active_drawing"]["geometry"])
-            bounds = geom.bounds
-            lat_center = (bounds[1] + bounds[3]) / 2
-            lon_center = (bounds[0] + bounds[2]) / 2
-            st.session_state.map_center = [lat_center, lon_center]
-            st.session_state.zoom = 14
-        except:
-            pass
 
     st.subheader("✅ Geometry Validation")
 
