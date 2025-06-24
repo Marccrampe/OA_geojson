@@ -113,16 +113,15 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    # Inject JS to clear drawings
+    # Inject JS to simulate click on clear all (no refresh)
     if clear_map:
         class ClearDrawJS(MacroElement):
             _template = Template("""
                 {% macro script(this, kwargs) %}
                 setTimeout(function() {
                     let map = {{this._parent.get_name()}};
-                    if (map && map.drawControl && map.drawControl._toolbars.edit) {
-                        map.drawControl._toolbars.edit._modes.remove.handler._clearAll();
-                    }
+                    let clearBtn = document.querySelector('.leaflet-draw-edit-remove');
+                    if (clearBtn) clearBtn.click();
                 }, 100);
                 {% endmacro %}
             """)
@@ -193,4 +192,3 @@ with tabs[0]:
             st.error(f"Could not parse geometry: {e}")
     else:
         st.info("Draw a polygon or rectangle above to enable validation.")
-
