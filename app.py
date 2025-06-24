@@ -21,10 +21,14 @@ def get_base64_of_bin_file(bin_file_path):
     else:
         return None
 
-logo_base64 = get_base64_of_bin_file("open-atlas-logo.png")
+logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 
 # ---------- Page config ----------
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
+
+# ---------- Session state init ----------
+if "clear_trigger" not in st.session_state:
+    st.session_state.clear_trigger = False
 
 # ---------- Header ----------
 if logo_base64:
@@ -39,11 +43,12 @@ else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Controls ----------
-col1, col2, col3 = st.columns([1, 1, 1])
+col1, col2 = st.columns([1, 3])
 with col1:
-    clear_map = st.button("🗑️ Clear Map")
+    if st.button("🗑️ Clear Map"):
+        st.session_state.clear_trigger = True
 with col2:
-    locate_me = st.button("📍 Center on My Location")
+    st.markdown("📍 Use the locator button on the map to center on your location.")
 
 # ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
@@ -90,12 +95,13 @@ Draw(
 
 Geocoder().add_to(m)
 LayerControl().add_to(m)
-if locate_me:
-    LocateControl(auto_start=True).add_to(m)
+LocateControl(auto_start=False).add_to(m)
 
 output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
-if clear_map:
+
+if st.session_state.clear_trigger:
     output = {"last_active_drawing": None, "all_drawings": []}
+    st.session_state.clear_trigger = False
 
 # Zoom on drawn geometry if present
 if output and output.get("last_active_drawing"):
