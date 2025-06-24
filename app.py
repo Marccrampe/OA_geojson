@@ -106,18 +106,22 @@ with tabs[0]:
     if clear_map:
         st.components.v1.html("""
         <script>
-            const btns = window.parent.document.querySelectorAll('.leaflet-draw-edit-remove');
-            btns.forEach(btn => btn.click());
+            setTimeout(() => {
+                const btns = window.parent.document.querySelectorAll('.leaflet-draw-edit-remove');
+                btns.forEach(btn => btn.click());
+            }, 300);
         </script>
         """, height=0)
         st.session_state.drawings = []
 
-    # Inject JS to simulate click on LocateControl (no center/zoom change from backend)
+    # Inject JS to simulate click on LocateControl
     if geoloc_trigger:
         st.components.v1.html("""
         <script>
-            const btn = window.parent.document.querySelector('.leaflet-control-locate a');
-            if (btn) btn.click();
+            setTimeout(() => {
+                const locateBtn = window.parent.document.querySelector('.leaflet-control-locate a');
+                if (locateBtn) locateBtn.click();
+            }, 300);
         </script>
         """, height=0)
 
@@ -128,7 +132,6 @@ with tabs[0]:
         returned_objects=["last_active_drawing", "all_drawings"]
     )
 
-    # Only store geometry if drawn manually
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
