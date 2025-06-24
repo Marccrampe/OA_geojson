@@ -46,7 +46,17 @@ tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        clear_map = st.button("🗑️ Clear Map")
+        st.markdown("""
+            <button id="clear-map-btn" style="padding: 0.5em 1em; font-size: 16px;">🗑️ Clear Map</button>
+            <script>
+            const clearBtn = document.getElementById("clear-map-btn");
+            clearBtn.onclick = () => {
+                const removeBtn = document.querySelector('.leaflet-draw-edit-remove');
+                if (removeBtn) removeBtn.click();
+            };
+            </script>
+        """, unsafe_allow_html=True)
+
     with col2:
         geoloc_trigger = st.button("📍 Center on My Location")
 
@@ -102,21 +112,7 @@ with tabs[0]:
     LayerControl().add_to(m)
     LocateControl().add_to(m)
 
-    # Inject JS to simulate click on clear all (no refresh)
-    if clear_map:
-        class ClearDrawJS(MacroElement):
-            _template = Template("""
-                {% macro script(this, kwargs) %}
-                setTimeout(function() {
-                    const buttons = document.querySelectorAll('.leaflet-draw-edit-remove');
-                    buttons.forEach(btn => btn.click());
-                }, 300);
-                {% endmacro %}
-            """)
-        m.add_child(ClearDrawJS())
-        st.session_state.drawings = []
-
-    # Inject JS to simulate click on LocateControl (no center/zoom change from backend)
+    # Inject JS for geolocate
     if geoloc_trigger:
         class ClickLocateControlJS(MacroElement):
             _template = Template("""
@@ -129,14 +125,28 @@ with tabs[0]:
             """)
         m.add_child(ClickLocateControlJS())
 
+    # Fix for drawing after search
+    class FixDrawAfterSearch(MacroElement):
+        _template = Template("""
+            {% macro script(this, kwargs) %}
+            document.querySelectorAll('.leaflet-control-geocoder .leaflet-control-geocoder-form input')[0].addEventListener('blur', function() {
+                setTimeout(function() {
+                    let toolbar = document.querySelector('.leaflet-draw-toolbar-top a');
+                    if (toolbar) toolbar.click();
+                }, 500);
+            });
+            {% endmacro %}
+        """)
+    m.add_child(FixDrawAfterSearch())
+
     output = st_folium(
         m,
         height=700,
         width=1200,
-        returned_objects=["last_active_drawing", "all_drawings"]
+        returned_objects=["last_active_drawing", "all_drawings"],
+        key="mymap"
     )
 
-    # Do NOT auto-update center/zoom anymore after drawing
     if output and output.get("last_active_drawing"):
         st.session_state.drawings = [output["last_active_drawing"]]
 
