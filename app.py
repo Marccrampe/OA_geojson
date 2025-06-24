@@ -39,7 +39,11 @@ else:
     st.markdown("## Draw or Upload Your Land Area (EUDR-compliant)")
 
 # ---------- Controls ----------
-clear_map = st.button("🗑️ Clear Map")
+col1, col2 = st.columns([1, 1])
+with col1:
+    clear_map = st.button("🗑️ Clear Map")
+with col2:
+    locate_me = st.button("📍 Center on My Location")
 
 # ---------- Draw and map section ----------
 st.subheader("🗺️ Draw your area")
@@ -87,7 +91,9 @@ if not clear_map:
 
 Geocoder().add_to(m)
 LayerControl().add_to(m)
-LocateControl(auto_start=True).add_to(m)
+
+if locate_me:
+    LocateControl(auto_start=True).add_to(m)
 
 output = st_folium(m, height=700, width=1200, returned_objects=["last_active_drawing", "all_drawings"])
 
