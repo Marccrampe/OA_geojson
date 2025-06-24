@@ -112,6 +112,16 @@ if output and output.get("last_active_drawing"):
 
 output = st_folium(m, height=650, width=1100, returned_objects=["last_active_drawing", "all_drawings"])
 
+# Zoom on drawn geometry if present
+if output and output.get("last_active_drawing"):
+    try:
+        feature = output["last_active_drawing"]
+        geom = shape(feature["geometry"])
+        bounds = geom.bounds  # (minx, miny, maxx, maxy)
+        m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+    except Exception as e:
+        st.warning("Could not zoom to geometry.")
+
 # ---------- Geometry validation ----------
 st.subheader("✅ Geometry Validation")
 
