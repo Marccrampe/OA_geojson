@@ -56,7 +56,9 @@ with tabs[0]:
     if "drawings" not in st.session_state:
         st.session_state.drawings = []
 
-    # Clear map button is now obsolete (single polygon mode)
+    if clear_map:
+        st.session_state.drawings = []
+        st.experimental_rerun()
 
     st.subheader("🗺️ Draw your area")
 
