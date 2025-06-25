@@ -138,7 +138,7 @@ st.markdown("""
         }
         .stTabs [aria-selected="true"] {
             color: #4A1CFC !important;
-            border-bottom: 8px solid #4A1CFC !important;
+            border-bottom: 8px solid #4A90E2 !important;
             background-color: #1e1e1e !important;
         }
     </style>
