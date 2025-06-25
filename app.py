@@ -402,6 +402,6 @@ with tabs[2]:
         components.html(pdf_display, height=800)
 
     # Download button
-    with open("OpenAtlas_Guide.pdf", "rb") as f:
+    with open("Geojson_guide.pdf", "rb") as f:
         st.download_button("📥 Download User Guide (PDF)", f, file_name="Geojson_guide.pdf")
 
