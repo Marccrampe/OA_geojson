@@ -390,20 +390,20 @@ with tabs[1]:
     with tabs[2]:
     
     st.markdown("### 📘 OpenAtlas User Guide – Full Viewer")
-    import streamlit as st
-    import base64
+        import streamlit as st
+        import base64
+        
+        pdf_path = "Geojson_guide.pdf"
+        
+        with open(pdf_path, "rb") as f:
+            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+        
+        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
+        st.markdown(pdf_display, unsafe_allow_html=True)
+        
     
-    pdf_path = "Geojson_guide.pdf"
     
-    with open(pdf_path, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+        # Download button
+        with open("Geojson_guide.pdf", "rb") as f:
+            st.download_button("📥 Download User Guide (PDF)", f, file_name="Geojson_guide.pdf")
     
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
-    
-
-
-    # Download button
-    with open("Geojson_guide.pdf", "rb") as f:
-        st.download_button("📥 Download User Guide (PDF)", f, file_name="Geojson_guide.pdf")
-
