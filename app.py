@@ -26,6 +26,8 @@ logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 
 # ---------- Page config ----------
 
+# ---------- Page config ----------
+
 st.set_page_config(page_title="OpenAtlas GeoJSON Tool", layout="wide")
 st.markdown("""
     <style>
@@ -42,21 +44,9 @@ st.markdown("""
             font-weight: 600;
         }
 
-        .stButton>button {
-            background-color: #4A1CFC;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.75em 1.5em;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-        }
-        .stButton>button:hover {
-            background-color: #3a17d9;
-        }
-
+        .stButton>button,
         .stDownloadButton>button {
-            background-color: #00CBA1;
+            background-color: #4A90E2 !important; /* light blue */
             color: white;
             border: none;
             border-radius: 12px;
@@ -64,8 +54,9 @@ st.markdown("""
             font-weight: 600;
             transition: background-color 0.3s ease;
         }
+        .stButton>button:hover,
         .stDownloadButton>button:hover {
-            background-color: #00b292;
+            background-color: #357ABD !important;
         }
 
         .stTextInput>div>div>input {
