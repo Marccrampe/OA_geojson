@@ -394,9 +394,18 @@ with tabs[2]:
 
     github_pdf_url = "https://github.com/Marccrampe/OA_geojson/Geojson_guide.pdf"
 
-    st.markdown(f"""
-        <iframe src="{github_pdf_url}" width="100%" height="800px" style="border:none;"></iframe>
-    """, unsafe_allow_html=True)
+    import streamlit as st
+import base64
 
+pdf_path = "Geojson_guide.pdf"
+
+with open(pdf_path, "rb") as f:
+    base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+
+    st.markdown(f"""
+        <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                width="100%" height="800px" 
+                type="application/pdf"></iframe>
+    """, unsafe_allow_html=True)
     st.link_button("📥 Download the User Guide (PDF)", github_pdf_url)
 
