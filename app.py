@@ -138,7 +138,7 @@ st.markdown("""
     <style>
         .stTabs [data-baseweb="tab"] {
             font-size: 22px !important;
-            font-weight: 1500 !important;
+            font-weight: 2500 !important;
             padding: 1.5rem 2.5rem !important;
             border-bottom: 8px solid transparent;
         }
