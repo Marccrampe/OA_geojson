@@ -12,6 +12,8 @@ from shapely.geometry import shape, Polygon
 from shapely.validation import explain_validity
 import base64
 import os
+import streamlit.components.v1 as components
+
 
 # ---------- Load and encode logo ----------
 def get_base64_of_bin_file(bin_file_path):
