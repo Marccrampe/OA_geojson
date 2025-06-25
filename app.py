@@ -389,24 +389,14 @@ with tabs[1]:
     
 # ---- Tab 3: User Guide ----
 with tabs[2]:
-    st.markdown("### 📘 OpenAtlas User Guide – Full Viewer")
+    st.markdown("### 📘 OpenAtlas GeoJSON Tool – User Guide")
     st.markdown("This guide walks you through all key features of the tool, with examples and tips to ensure EUDR-compliant land parcel creation.")
 
-    # Lire le PDF localement et l'afficher dans un iframe encodé en base64
-    import base64
-    pdf_path = "Geojson_guide.pdf"
-    
-    with open(pdf_path, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+    github_pdf_url = "https://github.com/Marccrampe/OA_geojson/Geojson_guide.pdf"
 
-    pdf_display = f'''
-        <iframe src="data:application/pdf;base64,{base64_pdf}"
-                width="100%" height="800px" style="border:none;">
-        </iframe>
-    '''
-    st.markdown(pdf_display, unsafe_allow_html=True)
+    st.markdown(f"""
+        <iframe src="{github_pdf_url}" width="100%" height="800px" style="border:none;"></iframe>
+    """, unsafe_allow_html=True)
 
-    # Bouton de téléchargement
-    with open(pdf_path, "rb") as f:
-        st.download_button("📥 Download the User Guide (PDF)", f, file_name="Geojson_guide.pdf")
+    st.link_button("📥 Download the User Guide (PDF)", github_pdf_url)
 
