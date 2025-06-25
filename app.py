@@ -385,25 +385,28 @@ with tabs[1]:
         except Exception as e:
             st.error(f"Error processing the file: {e}")
 
-#----  tab 3 -------------
 
-    with tabs[2]:
     
+# ---- Tab 3: User Guide ----
+with tabs[2]:
     st.markdown("### 📘 OpenAtlas User Guide – Full Viewer")
-        import streamlit as st
-        import base64
-        
-        pdf_path = "Geojson_guide.pdf"
-        
-        with open(pdf_path, "rb") as f:
-            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-        
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
-        
+    st.markdown("This guide walks you through all key features of the tool, with examples and tips to ensure EUDR-compliant land parcel creation.")
+
+    # Lire le PDF localement et l'afficher dans un iframe encodé en base64
+    import base64
+    pdf_path = "Geojson_guide.pdf"
     
-    
-        # Download button
-        with open("Geojson_guide.pdf", "rb") as f:
-            st.download_button("📥 Download User Guide (PDF)", f, file_name="Geojson_guide.pdf")
-    
+    with open(pdf_path, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+
+    pdf_display = f'''
+        <iframe src="data:application/pdf;base64,{base64_pdf}"
+                width="100%" height="800px" style="border:none;">
+        </iframe>
+    '''
+    st.markdown(pdf_display, unsafe_allow_html=True)
+
+    # Bouton de téléchargement
+    with open(pdf_path, "rb") as f:
+        st.download_button("📥 Download the User Guide (PDF)", f, file_name="Geojson_guide.pdf")
+
