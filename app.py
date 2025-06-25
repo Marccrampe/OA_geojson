@@ -134,18 +134,27 @@ else:
 
 # ---------- Tabs ----------
 
-# Custom style to make tabs bigger and bolder
 st.markdown("""
     <style>
         .stTabs [data-baseweb="tab"] {
-            font-size: 18px !important;
-            font-weight: 1500 !important;
-            padding: 1rem 2rem !important;
+            font-size: 22px !important;
+            font-weight: 800 !important;
+            padding: 1.5rem 2.5rem !important;
+            border-bottom: 4px solid transparent;
+        }
+        .stTabs [data-baseweb="tab"]:hover {
+            background-color: #2a2a2a !important;
+        }
+        .stTabs [aria-selected="true"] {
+            color: #4A1CFC !important;
+            border-bottom: 4px solid #4A1CFC !important;
+            background-color: #1e1e1e !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
+
 
 
 # ----------------------- TAB 1: DRAW TOOL ---------------------------
