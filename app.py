@@ -138,16 +138,16 @@ st.markdown("""
     <style>
         .stTabs [data-baseweb="tab"] {
             font-size: 22px !important;
-            font-weight: 800 !important;
+            font-weight: 1500 !important;
             padding: 1.5rem 2.5rem !important;
-            border-bottom: 4px solid transparent;
+            border-bottom: 8px solid transparent;
         }
         .stTabs [data-baseweb="tab"]:hover {
             background-color: #2a2a2a !important;
         }
         .stTabs [aria-selected="true"] {
             color: #4A1CFC !important;
-            border-bottom: 4px solid #4A1CFC !important;
+            border-bottom: 8px solid #4A1CFC !important;
             background-color: #1e1e1e !important;
         }
     </style>
