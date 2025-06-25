@@ -133,7 +133,7 @@ st.markdown("""
             border-bottom: 8px solid transparent;
         }
         .stTabs [data-baseweb="tab"]:hover {
-            background-color: #2a2a2a !important;
+            background-color: #4A90E2 !important;
         }
         .stTabs [aria-selected="true"] {
             color: #4A90E2 !important;
