@@ -96,6 +96,13 @@ st.markdown("""
             align-items: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        
+        .stTextInput input {
+        color: white !important;
+        background-color: #1e1e1e !important;
+        border: 1px solid #4A90E2 !important;
+}
+
     </style>
 """, unsafe_allow_html=True)
 
