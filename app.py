@@ -127,25 +127,27 @@ else:
 st.markdown("""
     <style>
         .stTabs [data-baseweb="tab"] {
-            font-size: 22px !important;
-            font-weight: 2500 !important;
+            font-size: 24px !important;
+            font-weight: 900 !important;
+            color: #4A90E2 !important;
             padding: 1.5rem 2.5rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             border-bottom: 8px solid transparent;
         }
         .stTabs [data-baseweb="tab"]:hover {
-            background-color: #4A90E2 !important;
+            background-color: #1e1e1e !important;
+            color: #4A90E2 !important;
         }
         .stTabs [aria-selected="true"] {
-            color: #4A90E2 !important;
-            border-bottom: 8px solid #4A90E2 !important;
+            color: #ffffff !important;
             background-color: #4A90E2 !important;
+            border-bottom: 8px solid #4A90E2 !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
-
-
 
 # ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
