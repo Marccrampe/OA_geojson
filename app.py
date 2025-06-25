@@ -388,18 +388,16 @@ with tabs[1]:
 #----  tab 3 -------------
 
 with tabs[2]:
-    st.subheader("📘 OpenAtlas GeoJSON Tool – User Guide")
 
-    st.markdown("""
-    This guide walks you through all key features of the tool,
-    with examples and tips to ensure EUDR-compliant land parcel creation.
-    """)
+st.markdown("### 📘 OpenAtlas User Guide – Full Viewer")
+components.html(
+    '''
+    <iframe src="https://mozilla.github.io/pdf.js/web/viewer.html?file=Geojson_guide.pdf"
+            width="100%" height="800px" style="border: none;"></iframe>
+    ''',
+    height=800
+)
 
-    # Load and display the PDF
-    with open("Geojson_guide.pdf", "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
-        components.html(pdf_display, height=800)
 
     # Download button
     with open("Geojson_guide.pdf", "rb") as f:
