@@ -133,7 +133,20 @@ else:
     st.markdown("## Define, Edit and Validate Land Areas for EUDR Compliance")
 
 # ---------- Tabs ----------
+
+# Custom style to make tabs bigger and bolder
+st.markdown("""
+    <style>
+        .stTabs [data-baseweb="tab"] {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            padding: 1rem 2rem !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
+
 
 # ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
