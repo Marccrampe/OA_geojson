@@ -154,7 +154,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File"])
+tabs = st.tabs(["🖊️ Draw Tool", "📤 Upload from File", "📘 User Guide"])
 
 # ----------------------- TAB 1: DRAW TOOL ---------------------------
 with tabs[0]:
@@ -382,4 +382,24 @@ with tabs[1]:
                         st.code(final_geojson, language='json')
         except Exception as e:
             st.error(f"Error processing the file: {e}")
+
+#----  tab 3 -------------
+
+with tabs[2]:
+    st.subheader("📘 OpenAtlas GeoJSON Tool – User Guide")
+
+    st.markdown("""
+    This guide walks you through all key features of the tool,
+    with examples and tips to ensure EUDR-compliant land parcel creation.
+    """)
+
+    # Load and display the PDF
+    with open("Geojson_guide.pdf", "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
+        components.html(pdf_display, height=800)
+
+    # Download button
+    with open("OpenAtlas_Guide.pdf", "rb") as f:
+        st.download_button("📥 Download User Guide (PDF)", f, file_name="Geojson_guide.pdf")
 
