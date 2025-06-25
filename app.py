@@ -391,14 +391,14 @@ with tabs[1]:
 with tabs[2]:
     st.markdown("### 📘 OpenAtlas User Guide – Full Viewer")
 
-    pdf_raw_url = "https://raw.githubusercontent.com/Marccrampe/OA_geojson/main/Geojson_guide.pdf"
-    viewer_url = f"https://mozilla.github.io/pdf.js/web/viewer.html?file={pdf_raw_url}"
+    viewer_url = "https://drive.google.com/file/d/115BPqwcYLr8fbNiJDlW_TEZSk4yDihFX/preview"
+    download_url = "https://drive.google.com/uc?export=download&id=115BPqwcYLr8fbNiJDlW_TEZSk4yDihFX"
 
     st.components.v1.html(
-        f'<iframe src="{viewer_url}" width="100%" height="800px" style="border: none;"></iframe>',
+        f'<iframe src="{viewer_url}" width="100%" height="800px" allow="autoplay"></iframe>',
         height=800
     )
 
-    st.download_button("📥 Download the full User Guide (PDF)", pdf_raw_url, file_name="Geojson_guide.pdf")
+    st.markdown(f"[📥 Download the PDF]({download_url})", unsafe_allow_html=True)
 
 
