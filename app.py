@@ -24,7 +24,6 @@ def get_base64_of_bin_file(bin_file_path):
 
 logo_base64 = get_base64_of_bin_file("openatlas_logo.png")
 
-# ---------- Page config ----------
 
 # ---------- Page config ----------
 
@@ -137,7 +136,7 @@ st.markdown("""
             background-color: #2a2a2a !important;
         }
         .stTabs [aria-selected="true"] {
-            color: #4A1CFC !important;
+            color: #4A90E2 !important;
             border-bottom: 8px solid #4A90E2 !important;
             background-color: #1e1e1e !important;
         }
